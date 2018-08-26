@@ -1,0 +1,8 @@
+*.pyc
+.DS_Store
+node_modules/
+
+audio/downloads/*
+!audio/downloads/.keep
+audio/output/*
+!audio/output/.keep
