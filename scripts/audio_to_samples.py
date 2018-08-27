@@ -20,8 +20,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILES", default="../audio/sample/*.mp3", help="Input file pattern")
 parser.add_argument('-samples', dest="SAMPLES", default=8, type=int, help="Max samples to produce, -1 for all")
 parser.add_argument('-min', dest="MIN_DUR", default=0.05, type=float, help="Minimum sample duration in seconds")
-parser.add_argument('-max', dest="MAX_DUR", default=0.75, type=float, help="Maximum sample duration in seconds")
-parser.add_argument('-amp', dest="AMP_THESHOLD", default=0.075, type=float, help="Amplitude theshold")
+parser.add_argument('-max', dest="MAX_DUR", default=1.00, type=float, help="Maximum sample duration in seconds")
+parser.add_argument('-amp', dest="AMP_THESHOLD", default=-1, type=float, help="Amplitude theshold, -1 for default")
 parser.add_argument('-save', dest="SAVE", default=0, type=int, help="Save files?")
 parser.add_argument('-plot', dest="PLOT", default=0, type=int, help="Show plot?")
 parser.add_argument('-dir', dest="SAMPLE_DIR", default="../audio/output", help="Output dir")
@@ -45,10 +45,8 @@ if SAMPLES <= 0:
     SAMPLES = None
 
 # Audio config
-SR = 48000
 FFT = 2048
 HOP_LEN = FFT/4
-LIMIT = None
 PLOT_DOWNSAMPLE = 100
 FIGSIZE = (30,3)
 
@@ -56,51 +54,75 @@ FIGSIZE = (30,3)
 files = glob.glob(INPUT_FILES)
 print("Found %s files" % len(files))
 
-def split_chunks(x):
-    chunks = []
-    previous = None
-    for sample in x:
-        if sample != previous:
-            chunks.append([])
-        chunks[-1].append(sample)
-        previous = sample
-    return chunks
+def getSlices(e, ampMin, minLen, maxLen):
+    stdev = np.std(e)
+    minAmp = min(stdev * 1.5, 0.5)
+    if ampMin >= 0:
+        minAmp = ampMin
+    slices = []
+    prev = None
+    start = None
+    end = None
+    for i, value in enumerate(e):
+        # first
+        if prev is None:
+            prev = value
+            continue
+        # we've hit the beginning of a slice
+        if prev < minAmp and value >= minAmp:
+            start = i
+        # we've hit the end of a slice
+        elif prev >= minAmp and value < minAmp:
+            end = i
+        # add slice
+        if start is not None and end is not None:
+            if end > start:
+                slices.append([start, end])
+            start = None
+            end = None
+        prev = value
 
-def join_chunks(chunks):
-    return [item for sublist in chunks for item in sublist]
+    maxIndex = len(e) - 1
+    # backtrack and look ahead
+    for i, slice in enumerate(slices):
+        left, right = tuple(slice)
+        # backtrack left
+        value = e[left]
+        j = left - 1
+        while j >= 0:
+            vnew = e[j]
+            if vnew < value:
+                value = vnew
+            else:
+                break
+            j -= 1
+        leftNew = max(j + 1, 0)
+        # look ahead right
+        value = e[right]
+        j = right + 1
+        while j <= maxIndex:
+            vnew = e[j]
+            if vnew < value:
+                value = vnew
+            else:
+                break
+            j += 1
+        rightNew = min(j - 1, maxIndex)
+        # update slice
+        slices[i] = [leftNew, rightNew]
 
-def replace_small_chunks(chunks, search, substitute, min_length):
-    modified = []
-    for chunk in chunks:
-        cur = chunk[0]
-        if cur == search and len(chunk) < min_length:
-            cur = substitute
-        modified.append([cur for x in chunk])
-    return split_chunks(join_chunks(modified))
+    # remove slices that are too long or too short
+    slices = [s for s in slices if s[1]-s[0] >= minLen and s[1]-s[0] <= maxLen]
 
-# do a grid search to determine the min and max chunk sizes
-# that minimize standard deviation of chunk lengths
-def get_optimal_chunks(chunks, min_length=3, max_length=500, n=10):
-    best_std = None
-    best_chunks = []
-    for quiet_thresh in np.linspace(min_length, max_length, n):
-        for sound_thresh in np.linspace(min_length, max_length, n):
-            cur = replace_small_chunks(chunks, False, True, quiet_thresh)
-            cur = replace_small_chunks(cur, True, False, sound_thresh)
-            chunk_lengths = [len(chunk) for chunk in cur]
-            cur_std = np.std(chunk_lengths)
-            if (best_std is None or cur_std < best_std) and len(cur) > 1:
-#                 print cur_std, 'better than', best_std, 'using', quiet_thresh, sound_thresh
-                best_chunks = cur
-                best_std = cur_std
-    return best_chunks
+    return slices
+
+# files = [files[2]]
 
 for fn in files:
     basename = os.path.basename(fn).split('.')[0]
 
     # load audio
     y, sr = librosa.load(fn)
-    ymin = AMP_THESHOLD + min(np.abs(y))
     y /= y.max()
     ylen = len(y)
     duration = ylen/sr
@@ -109,42 +131,28 @@ for fn in files:
     max_duration_frames = librosa.core.time_to_frames([MAX_DUR], sr=sr, hop_length=HOP_LEN)[0]
     print("%s / %s seconds" % (basename, round(duration, 2)))
 
-    if PLOT:
-        # plot the raw waveform
-        plt.figure(figsize=FIGSIZE)
-        plt.plot(y[::PLOT_DOWNSAMPLE])
-        plt.xlim([0, ylen/PLOT_DOWNSAMPLE])
-        plt.gca().xaxis.set_visible(False)
-        plt.gca().yaxis.set_visible(False)
-        # plt.show()
+    # if PLOT:
+    #     # plot the raw waveform
+    #     plt.figure(figsize=FIGSIZE)
+    #     plt.plot(y[::PLOT_DOWNSAMPLE])
+    #     plt.xlim([0, ylen/PLOT_DOWNSAMPLE])
+    #     plt.gca().xaxis.set_visible(False)
+    #     plt.gca().yaxis.set_visible(False)
+    #     # plt.show()
 
     # compute the rmse (root-mean-square energy) and threshold at a fixed value
     S = librosa.stft(y, n_fft=FFT, hop_length=HOP_LEN)
     e = librosa.feature.rmse(S=S)[0]
     e -= e.min()
     e /= e.max()
-    et = np.where(e < ymin, False, True)
 
-    # split the thresholded audio into chunks and combine them optimally
-    chunks = split_chunks(et)
-    chunks = get_optimal_chunks(chunks, min_duration_frames, max_duration_frames, 10)
-    et = join_chunks(chunks)
+    slices = getSlices(e, AMP_THESHOLD, min_duration_frames, max_duration_frames)
 
     if PLOT:
         # plot the rmse and thresholded rmse
         plt.figure(figsize=FIGSIZE)
         plt.plot(e)
-        plt.plot(et)
         # plt.show()
-
-    # convert chunks into "slices": beginning and end position pairs
-    slices = []
-    cur_slice = 0
-    for chunk in chunks:
-        next_slice = cur_slice + len(chunk)
-        if chunk[0] and len(chunk) < max_duration_frames:
-            slices.append([cur_slice, next_slice])
-        cur_slice = next_slice
 
     sliceCount = len(slices)
     print(" -> Found %s samples" % sliceCount)
@@ -154,7 +162,8 @@ for fn in files:
     for left, right in slices:
         if PLOT:
             # highlight saved chunks
-            plt.gca().add_patch(patches.Rectangle((left, 0), (right - left), 1, hatch='//', alpha=0.2, fill='black'))
+            fillcolor = "blue" if i % 2 > 0 else "red"
+            plt.gca().add_patch(patches.Rectangle((left, 0), (right - left), 1, alpha=0.2, color=fillcolor))
 
         ysample = y[left*HOP_LEN:right*HOP_LEN]
         stft = librosa.feature.rmse(S=librosa.stft(ysample, n_fft=FFT, hop_length=HOP_LEN))[0]
