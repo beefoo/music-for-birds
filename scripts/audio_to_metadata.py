@@ -26,9 +26,14 @@ for f in files:
     audio = MP3(f)
     # print(audio.tags.pprint())
     length = audio.info.length
+
+    # parse comments
     comments = str(audio.tags["COMM::ENG"])
+
+    # parse groups
     group = str(audio.tags["TIT1"])
     group = group.replace(", and ", ", ")
     group = group.replace(" and ", ", ")
+
     pprint([length, comments, group])
     break

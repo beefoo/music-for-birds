@@ -18,7 +18,7 @@ from utils import weighted_mean
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILES", default="../audio/sample/*.mp3", help="Input file pattern")
-parser.add_argument('-samples', dest="SAMPLES", default=-1, type=int, help="Max samples to produce, -1 for all")
+parser.add_argument('-samples', dest="SAMPLES", default=8, type=int, help="Max samples to produce, -1 for all")
 parser.add_argument('-min', dest="MIN_DUR", default=0.05, type=float, help="Minimum sample duration in seconds")
 parser.add_argument('-max', dest="MAX_DUR", default=0.75, type=float, help="Maximum sample duration in seconds")
 parser.add_argument('-amp', dest="AMP_THESHOLD", default=0.075, type=float, help="Amplitude theshold")
@@ -95,7 +95,6 @@ def get_optimal_chunks(chunks, min_length=3, max_length=500, n=10):
                 best_std = cur_std
     return best_chunks
 
-i = 0
 for fn in files:
     basename = os.path.basename(fn).split('.')[0]
 
@@ -147,8 +146,12 @@ for fn in files:
             slices.append([cur_slice, next_slice])
         cur_slice = next_slice
 
-    print(" -> Found %s samples" % len(slices))
-    for left, right in slices[:SAMPLES]:
+    sliceCount = len(slices)
+    print(" -> Found %s samples" % sliceCount)
+    sampleData = []
+    ysamples = []
+    i = 0
+    for left, right in slices:
         if PLOT:
             # highlight saved chunks
             plt.gca().add_patch(patches.Rectangle((left, 0), (right - left), 1, hatch='//', alpha=0.2, fill='black'))
@@ -164,16 +167,36 @@ for fn in files:
         power = round(weighted_mean(stft), 2)
         hz = round(weighted_mean(rolloff), 2)
         note = librosa.hz_to_note(hz)
+        startms = int(round(start * duration * 1000))
+        sampleFilename = "%s %s.wav" % (basename, startms)
+
+        ysamples.append(ysample)
+        sampleData.append({
+            "index": i,
+            "parent": basename,
+            "filename": sampleFilename,
+            "start": start,
+            "dur": dur,
+            "power": power,
+            "hz": hz,
+            "note": note
+        })
+        i+=1
         # print("pos=%s, dur=%s, hz=%s (%s) power=%s" % (start, dur, hz, note, power))
 
-        if SAVE:
-            pad = len(str(len(slices)))
-            outFn = join(SAMPLE_DIR, '{} {}.wav'.format(basename, str(i).zfill(pad)))
+    # if too many samples, take the ones with the most power
+    if SAMPLES is not None and len(sampleData) > SAMPLES:
+        sampleData = sorted(sampleData, key=lambda k: k['power'], reverse=True)
+        sampleData = sampleData[:SAMPLES]
+
+    if SAVE:
+        for d in sampleData:
+            ysample = ysamples[d["index"]]
+            outFn = join(SAMPLE_DIR, d["filename"])
             if OVERWRITE or not os.path.isfile(outFn):
                 sample = np.copy(ysample)
                 sample /= np.abs(sample).max()
                 librosa.output.write_wav(outFn, sample, sr)
-            i += 1
 
     if PLOT:
         # finish up the plot we've been building
