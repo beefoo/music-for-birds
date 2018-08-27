@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# Looks for musical samples in arbitrary audio
 # Adapted from: https://github.com/kylemcdonald/AudioNotebooks/blob/master/Multisamples%20to%20Samples.ipynb
+# Usage:
+    # python audio_to_samples.py -plot 1
+    # python audio_to_samples.py -save 1
 
 import argparse
 import glob
