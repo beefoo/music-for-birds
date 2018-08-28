@@ -36,8 +36,7 @@ def readFile(f):
     basename = fname.split('.')[0]
 
     # use librosa to get duration
-    y, sr = librosa.load(f)
-    duration = round(librosa.get_duration(y=y, sr=sr), 3)
+    duration = round(librosa.get_duration(filename=f), 3)
 
     audio = MP3(f)
 
