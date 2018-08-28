@@ -10,6 +10,8 @@ import argparse
 import glob
 from matplotlib import pyplot as plt
 from matplotlib import patches
+from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 import os
 from os.path import join
 import librosa
@@ -56,7 +58,8 @@ FIGSIZE = (30,3)
 
 # Read files
 files = glob.glob(INPUT_FILES)
-print("Found %s files" % len(files))
+fileCount = len(files)
+print("Found %s files" % fileCount)
 
 def getSlices(e, ampMin, minLen, maxLen):
     stdev = np.std(e)
@@ -121,8 +124,9 @@ def getSlices(e, ampMin, minLen, maxLen):
     return slices
 
 # files = [files[2]]
-
-for fn in files:
+progress = 0
+def makeSamples(fn):
+    global progress
     basename = os.path.basename(fn).split('.')[0]
 
     # load audio
@@ -133,7 +137,6 @@ for fn in files:
 
     min_duration_frames = librosa.core.time_to_frames([MIN_DUR], sr=sr, hop_length=HOP_LEN)[0]
     max_duration_frames = librosa.core.time_to_frames([MAX_DUR], sr=sr, hop_length=HOP_LEN)[0]
-    print("%s / %s seconds" % (basename, round(duration, 2)))
 
     # if PLOT:
     #     # plot the raw waveform
@@ -158,8 +161,9 @@ for fn in files:
         plt.plot(e)
         # plt.show()
 
+    progress += 1
     sliceCount = len(slices)
-    print(" -> Found %s samples" % sliceCount)
+    print("%s%% | Found %s samples in %s" % (round(1.0*progress/fileCount*100, 1), sliceCount, basename))
     sampleData = []
     ysamples = []
     i = 0
@@ -217,3 +221,11 @@ for fn in files:
         plt.gca().xaxis.set_visible(False)
         plt.gca().yaxis.set_visible(False)
         plt.show()
+
+    return sampleData
+
+pool = ThreadPool()
+data = pool.map(makeSamples, files)
+pool.close()
+pool.join()
+print "Done."
