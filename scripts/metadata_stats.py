@@ -3,9 +3,7 @@
 import argparse
 import collections
 import csv
-from matplotlib import pyplot as plt
 import os
-import numpy as np
 from pprint import pprint
 import sys
 from utils import readCsv
