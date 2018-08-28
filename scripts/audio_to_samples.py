@@ -31,7 +31,7 @@ parser.add_argument('-amp', dest="AMP_THESHOLD", default=-1, type=float, help="A
 parser.add_argument('-save', dest="SAVE", default=0, type=int, help="Save files?")
 parser.add_argument('-plot', dest="PLOT", default=0, type=int, help="Show plot?")
 parser.add_argument('-dir', dest="SAMPLE_DIR", default="../audio/output", help="Output dir")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/audio_samples.csv", help="CSV output file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/audio_samples.csv", help="CSV output file")
 parser.add_argument('-overwrite', dest="OVERWRITE", default=0, type=int, help="Overwrite existing audio/data?")
 args = parser.parse_args()
 

@@ -18,7 +18,7 @@ import sys
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILES", default="../audio/sample/*.mp3", help="Input file pattern")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/audio_metadata.csv", help="CSV output file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/audio_metadata.csv", help="CSV output file")
 
 args = parser.parse_args()
 
@@ -104,8 +104,7 @@ pool.close()
 pool.join()
 
 print("Writing data to file...")
-entry = metadata[0]
-headings = list(entry.keys())
+headings = ["uid", "name", "species", "description", "groups", "sample", "duration", "state", "country", "authors"]
 with open(OUTPUT_FILE, 'wb') as f:
     writer = csv.writer(f)
     writer.writerow(headings)
