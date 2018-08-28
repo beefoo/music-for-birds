@@ -5,8 +5,10 @@
 # Usage:
     # python audio_to_samples.py -plot 1
     # python audio_to_samples.py -save 1
+    # python audio_to_samples.py -in "../audio/downloads/birds/*.mp3"
 
 import argparse
+import csv
 import glob
 from matplotlib import pyplot as plt
 from matplotlib import patches
@@ -18,6 +20,7 @@ import librosa
 from librosa import display
 import numpy as np
 from pprint import pprint
+import re
 import sys
 from utils import weighted_mean
 
@@ -193,6 +196,13 @@ def makeSamples(fn):
         startms = int(round(start * duration * 1000))
         sampleFilename = "%s %s.wav" % (basename, startms)
 
+        # parse note
+        octave = -1
+        matches = re.match("([A-Z]\#?b?)(\-?[0-9]+)", note)
+        if matches:
+            note = matches.group(1)
+            octave = int(matches.group(2))
+
         ysamples.append(ysample)
         sampleData.append({
             "index": i,
@@ -202,7 +212,8 @@ def makeSamples(fn):
             "dur": dur,
             "power": power,
             "hz": hz,
-            "note": note
+            "note": note,
+            "octave": octave
         })
         i+=1
         # print("pos=%s, dur=%s, hz=%s (%s) power=%s" % (start, dur, hz, note, power))
@@ -228,10 +239,24 @@ def makeSamples(fn):
         plt.gca().yaxis.set_visible(False)
         plt.show()
 
+    # sort chronologically
+    sampleData = sorted(sampleData, key=lambda k: k['start'])
+
     return sampleData
 
 pool = ThreadPool()
 data = pool.map(makeSamples, files)
 pool.close()
 pool.join()
-print "Done."
+
+print("Writing data to file...")
+headings = ["parent", "start", "dur", "power", "hz", "note", "octave"]
+rowCount = 0
+with open(OUTPUT_FILE, 'wb') as f:
+    writer = csv.writer(f)
+    writer.writerow(headings)
+    for sdata in data:
+        for entry in sdata:
+            writer.writerow([entry[key] for key in headings])
+            rowCount += 1
+print("Wrote %s rows to %s" % (rowCount, OUTPUT_FILE))
