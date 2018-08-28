@@ -18,7 +18,7 @@ import sys
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILES", default="../audio/sample/*.mp3", help="Input file pattern")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/audio_metadata.csv", help="CSV output file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_metadata.csv", help="CSV output file")
 
 args = parser.parse_args()
 
@@ -29,6 +29,11 @@ files = glob.glob(INPUT_FILES)
 fileCount = len(files)
 print("Found %s files" % fileCount)
 progress = 0
+
+# Make sure output dirs exist
+outDir = os.path.dirname(OUTPUT_FILE)
+if not os.path.exists(outDir):
+    os.makedirs(outDir)
 
 def readFile(f):
     global progress

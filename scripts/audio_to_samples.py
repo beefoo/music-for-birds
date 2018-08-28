@@ -30,8 +30,8 @@ parser.add_argument('-max', dest="MAX_DUR", default=1.00, type=float, help="Maxi
 parser.add_argument('-amp', dest="AMP_THESHOLD", default=-1, type=float, help="Amplitude theshold, -1 for default")
 parser.add_argument('-save', dest="SAVE", default=0, type=int, help="Save files?")
 parser.add_argument('-plot', dest="PLOT", default=0, type=int, help="Show plot?")
-parser.add_argument('-dir', dest="SAMPLE_DIR", default="../audio/output", help="Output dir")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/audio_samples.csv", help="CSV output file")
+parser.add_argument('-dir', dest="SAMPLE_DIR", default="../audio/output/birds", help="Output dir")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_samples.csv", help="CSV output file")
 parser.add_argument('-overwrite', dest="OVERWRITE", default=0, type=int, help="Overwrite existing audio/data?")
 args = parser.parse_args()
 
@@ -60,6 +60,12 @@ FIGSIZE = (30,3)
 files = glob.glob(INPUT_FILES)
 fileCount = len(files)
 print("Found %s files" % fileCount)
+
+# Make sure output dirs exist
+outDirs = [SAMPLE_DIR, os.path.dirname(OUTPUT_FILE)]
+for outDir in outDirs:
+    if not os.path.exists(outDir):
+        os.makedirs(outDir)
 
 def getSlices(e, ampMin, minLen, maxLen):
     stdev = np.std(e)
