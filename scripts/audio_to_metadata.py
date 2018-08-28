@@ -78,7 +78,7 @@ def readFile(f):
         groups = [g.strip() for g in groups.split(",")]
 
     entry = {
-        "filename": fname,
+        "filename": basename,
         "duration": duration,
         "name": name,
         "sample": sampleNumber,
@@ -104,7 +104,7 @@ pool.close()
 pool.join()
 
 print("Writing data to file...")
-headings = ["uid", "name", "species", "description", "groups", "sample", "duration", "state", "country", "authors"]
+headings = ["filename", "uid", "name", "species", "description", "groups", "sample", "duration", "state", "country", "authors"]
 with open(OUTPUT_FILE, 'wb') as f:
     writer = csv.writer(f)
     writer.writerow(headings)
