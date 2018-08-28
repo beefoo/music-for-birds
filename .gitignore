@@ -6,3 +6,5 @@ audio/downloads/*
 !audio/downloads/.keep
 audio/output/*
 !audio/output/.keep
+data/output/*
+!data/output/.keep
