@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 from pprint import pprint
 from pydub import AudioSegment
@@ -38,15 +39,24 @@ for i, sound in enumerate(sounds):
     sounds[i]["audio"] = AudioSegment.from_file(sound["filename"], format="wav")
 print("Loaded %s sounds" % len(sounds))
 
+def volumeToDb(volume):
+    db = 0.0
+    if volume < 1.0 || volume > 1.0:
+        # half volume = −6db = 10*log(0.5*0.5)
+        db = 10.0 * math.log(volume**2)
+    return db
+
 # Retrieve instructions
 instructions = []
 for i, line in enumerate(lines):
     if i < instructionStartIndex:
         continue
-    start, soundIndex, pan = tuple(line.split(","))
+    start, soundIndex, volume, pan = tuple(line.split(","))
+    db = volumeToDb(volume)
     instructions.append({
         "start": int(start),
         "soundIndex": int(soundIndex),
+        "db": db,
         "pan": float(pan)
     })
 instructions = sorted(instructions, key=lambda k: k['start'])
