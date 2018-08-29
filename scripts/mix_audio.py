@@ -15,6 +15,8 @@ parser.add_argument('-in', dest="INPUT_FILE", default="../data/sample/mix.txt", 
 parser.add_argument('-dir', dest="AUDIO_DIR", default="../audio/output/birds/", help="Input audio directory")
 parser.add_argument('-left', dest="PAD_LEFT", default=2000, type=int, help="Pad left in milliseconds")
 parser.add_argument('-right', dest="PAD_RIGHT", default=2000, type=int, help="Pad right in milliseconds")
+parser.add_argument('-s0', dest="EXCERPT_START", default=-1, type=int, help="Slice start in ms")
+parser.add_argument('-s1', dest="EXCERPT_END", default=-1, type=int, help="Slice end in ms")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../audio/output/sample_mix.wav", help="Output audio file")
 args = parser.parse_args()
 
@@ -22,10 +24,19 @@ INPUT_FILE = args.INPUT_FILE
 AUDIO_DIR = args.AUDIO_DIR
 PAD_LEFT = args.PAD_LEFT
 PAD_RIGHT = args.PAD_RIGHT
+EXCERPT_START = args.EXCERPT_START
+EXCERPT_END = args.EXCERPT_END
 OUTPUT_FILE = args.OUTPUT_FILE
 
 MIN_VOLUME = 0.01
 MAX_VOLUME = 10.0
+
+def volumeToDb(volume):
+    db = 0.0
+    if volume < 1.0 or volume > 1.0:
+        # half volume = −6db = 10*log(0.5*0.5)
+        db = 10.0 * math.log(volume**2)
+    return db
 
 # Read input file
 lines = [line.strip() for line in open(INPUT_FILE)]
@@ -39,24 +50,6 @@ for i, line in enumerate(lines):
         break
     soundFiles.append(line)
 sounds = [{"filename": AUDIO_DIR+fn} for fn in soundFiles]
-
-# Load sounds
-print("Loading sounds...")
-for i, sound in enumerate(sounds):
-    segment = AudioSegment.from_file(sound["filename"], format="wav")
-    # convert to stereo
-    if segment.channels != 2:
-        segment = segment.set_channels(2)
-    sounds[i]["audio"] = segment
-    sounds[i]["index"] = i
-print("Loaded %s sounds" % len(sounds))
-
-def volumeToDb(volume):
-    db = 0.0
-    if volume < 1.0 or volume > 1.0:
-        # half volume = −6db = 10*log(0.5*0.5)
-        db = 10.0 * math.log(volume**2)
-    return db
 
 # Retrieve instructions
 instructions = []
@@ -78,6 +71,28 @@ for i, line in enumerate(lines):
         "db": db,
         "pan": float(pan)
     })
+
+# Make excerpt
+if EXCERPT_START > 0:
+    instructions = [i for i in instructions if i["start"] > (EXCERPT_START-PAD_LEFT)]
+if EXCERPT_END > 0:
+    instructions = [i for i in instructions if i["start"] < (EXCERPT_END-PAD_LEFT)]
+soundIndices = list(set([i["soundIndex"] for i in instructions]))
+
+# Load sounds
+print("Loading sounds...")
+for i, sound in enumerate(sounds):
+    sounds[i]["index"] = i
+    # Don't load sound if we don't have to
+    if i not in soundIndices:
+        continue
+    segment = AudioSegment.from_file(sound["filename"], format="wav")
+    # convert to stereo
+    if segment.channels != 2:
+        segment = segment.set_channels(2)
+    sounds[i]["audio"] = segment
+
+print("Loaded %s sounds" % len(sounds))
 
 instructions = sorted(instructions, key=lambda k: k['start'])
 INSTRUCTION_COUNT = len(instructions)
