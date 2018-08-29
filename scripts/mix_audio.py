@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import argparse
 import math
 import os
@@ -11,7 +13,7 @@ parser.add_argument('-in', dest="INPUT_FILE", default="../data/sample/mix.txt", 
 parser.add_argument('-dir', dest="AUDIO_DIR", default="../audio/output/birds/", help="Input audio directory")
 parser.add_argument('-left', dest="PAD_LEFT", default=2000, type=int, help="Pad left in milliseconds")
 parser.add_argument('-right', dest="PAD_RIGHT", default=2000, type=int, help="Pad right in milliseconds")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/sample_mix.wav", help="Output csv file pattern")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../audio/output/sample_mix.wav", help="Output audio file")
 args = parser.parse_args()
 
 INPUT_FILE = args.INPUT_FILE
@@ -20,8 +22,11 @@ PAD_LEFT = args.PAD_LEFT
 PAD_RIGHT = args.PAD_RIGHT
 OUTPUT_FILE = args.OUTPUT_FILE
 
+MIN_VOLUME = 0.01
+MAX_VOLUME = 10.0
+
 # Read input file
-lines = [line.strip() for line in INPUT_FILE]
+lines = [line.strip() for line in open(INPUT_FILE)]
 
 # Retrieve sound files
 soundFiles = []
@@ -36,12 +41,16 @@ sounds = [{"filename": AUDIO_DIR+fn} for fn in soundFiles]
 # Load sounds
 print("Loading sounds...")
 for i, sound in enumerate(sounds):
-    sounds[i]["audio"] = AudioSegment.from_file(sound["filename"], format="wav")
+    segment = AudioSegment.from_file(sound["filename"], format="wav")
+    # convert to stereo
+    if segment.channels != 2:
+        segment = segment.set_channels(2)
+    sounds[i]["audio"] = segment
 print("Loaded %s sounds" % len(sounds))
 
 def volumeToDb(volume):
     db = 0.0
-    if volume < 1.0 || volume > 1.0:
+    if volume < 1.0 or volume > 1.0:
         # half volume = −6db = 10*log(0.5*0.5)
         db = 10.0 * math.log(volume**2)
     return db
@@ -52,11 +61,49 @@ for i, line in enumerate(lines):
     if i < instructionStartIndex:
         continue
     start, soundIndex, volume, pan = tuple(line.split(","))
+
+    # parse volume
+    volume = float(volume)
+    if volume < MIN_VOLUME:
+        continue
+    volume = min(volume, MAX_VOLUME)
     db = volumeToDb(volume)
+
     instructions.append({
-        "start": int(start),
+        "start": int(start) + PAD_LEFT,
         "soundIndex": int(soundIndex),
         "db": db,
         "pan": float(pan)
     })
+
 instructions = sorted(instructions, key=lambda k: k['start'])
+instructionCount = len(instructions)
+
+if instructionCount <= 0 or len(sounds) <= 0:
+    print("No instructions or sounds")
+    sys.exit(1)
+
+# determine duration
+last = instructions[-1]
+duration = last["start"] + len(sounds[last["soundIndex"]]) + PAD_RIGHT
+frame_rate = sounds[0]["audio"].frame_rate
+print("Creating audio file with duration %ss" % round(duration/1000.0, 3))
+
+# build audio
+baseAudio = AudioSegment.silent(duration=duration, frame_rate=frame_rate)
+baseAudio = baseAudio.set_channels(2)
+for index, i in enumerate(instructions):
+    newSound = sounds[i["soundIndex"]]["audio"]
+    if i["db"] != 0.0:
+        newSound += i["db"]
+    if i["pan"] != 0.0:
+        newSound = newSound.pan(i["pan"])
+    baseAudio = baseAudio.overlay(newSound, position=i["start"])
+    sys.stdout.write('\r')
+    sys.stdout.write("%s%%" % round(1.0*(index+1)/instructionCount*100,1))
+    sys.stdout.flush()
+
+print("Writing to file...")
+format = OUTPUT_FILE.split(".")[-1]
+f = baseAudio.export(OUTPUT_FILE, format=format)
+print("Wrote to %s" % OUTPUT_FILE)
