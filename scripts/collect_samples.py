@@ -7,10 +7,8 @@ import argparse
 import glob
 import os
 from os.path import join
-import librosa
-import numpy as np
+from pydub import AudioSegment
 from pprint import pprint
-import subprocess
 import sys
 
 # input
@@ -47,37 +45,18 @@ while i0 < fileCount:
     outFn = OUTPUT_FILE % str(i).zfill(2)
 
     if OVERWRITE or not os.path.isfile(outFn):
-        audio = np.array([])
-        sr = 48000
+        print("Building %s..." % outFn)
+        audio = AudioSegment.empty()
+
         for fn in samples:
-            # load audio
-            y, sr = librosa.load(fn)
-            audio = np.append(audio, y.reshape(-1))
-        # audio = audio.reshape(-1)
-        audio /= np.abs(audio).max() # normalize
+            audio += AudioSegment.from_wav(fn)
+        # audio /= audio.max # normalize
 
         # if MP3, write wav first, then convert to mp3 with ffmpeg
-        isMP3 = ".mp3" in outFn
-        outWav = outFn
-        if isMP3:
-            outWav = outFn.replace(".mp3", ".wav")
-        librosa.output.write_wav(outWav, audio, sr)
+        format = outFn.split(".")[-1]
+        file_handle = audio.export(outFn, format=format)
 
-        if isMP3:
-            command = ['ffmpeg',
-                '-i', outWav,
-                '-vn',
-                '-ar', '44100',
-                '-ac', '1', # mono vs stereo
-                # '-ab', '192k',
-                '-f', 'mp3',
-                outFn]
-            # print(" ".join(command))
-            finished = subprocess.check_call(command)
-            # remove temporary wav file
-            os.remove(outWav)
-
-        print("Write %s to file" % outFn)
+        print("Wrote %s to file" % outFn)
 
     i0 += SAMPLES_PER_FILE
     i1 += SAMPLES_PER_FILE
