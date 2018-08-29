@@ -2,6 +2,8 @@
 
 import argparse
 import math
+from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 import os
 from pprint import pprint
 from pydub import AudioSegment
@@ -46,6 +48,7 @@ for i, sound in enumerate(sounds):
     if segment.channels != 2:
         segment = segment.set_channels(2)
     sounds[i]["audio"] = segment
+    sounds[i]["index"] = i
 print("Loaded %s sounds" % len(sounds))
 
 def volumeToDb(volume):
@@ -77,9 +80,9 @@ for i, line in enumerate(lines):
     })
 
 instructions = sorted(instructions, key=lambda k: k['start'])
-instructionCount = len(instructions)
+INSTRUCTION_COUNT = len(instructions)
 
-if instructionCount <= 0 or len(sounds) <= 0:
+if INSTRUCTION_COUNT <= 0 or len(sounds) <= 0:
     print("No instructions or sounds")
     sys.exit(1)
 
@@ -89,19 +92,51 @@ duration = last["start"] + len(sounds[last["soundIndex"]]) + PAD_RIGHT
 frame_rate = sounds[0]["audio"].frame_rate
 print("Creating audio file with duration %ss" % round(duration/1000.0, 3))
 
-# build audio
+progress = 0
+def makeTrack(p):
+    global progress
+
+    duration = p["duration"]
+    frame_rate = p["frame_rate"]
+    instructions = p["instructions"]
+    sound = p["sound"]
+
+    # build audio
+    baseAudio = AudioSegment.silent(duration=duration, frame_rate=frame_rate)
+    baseAudio = baseAudio.set_channels(2)
+    for index, i in enumerate(instructions):
+        newSound = sound["audio"]
+        if i["db"] != 0.0:
+            newSound = newSound.apply_gain(i["db"])
+        if i["pan"] != 0.0:
+            newSound = newSound.pan(i["pan"])
+        baseAudio = baseAudio.overlay(newSound, position=i["start"])
+
+        progress += 1
+        sys.stdout.write('\r')
+        sys.stdout.write("%s%%" % round(1.0*progress/INSTRUCTION_COUNT*100,1))
+        sys.stdout.flush()
+
+    return baseAudio
+
+# Build track parameters
+trackParams = [{
+    "duration": duration,
+    "frame_rate": frame_rate,
+    "instructions": [i for i in instructions if i["soundIndex"]==s["index"]],
+    "sound": s
+} for s in sounds]
+
+print("Building %s tracks..." % len(trackParams))
+pool = ThreadPool()
+tracks = pool.map(makeTrack, trackParams)
+pool.close()
+pool.join()
+
+print("Combining tracks...")
 baseAudio = AudioSegment.silent(duration=duration, frame_rate=frame_rate)
-baseAudio = baseAudio.set_channels(2)
-for index, i in enumerate(instructions):
-    newSound = sounds[i["soundIndex"]]["audio"]
-    if i["db"] != 0.0:
-        newSound += i["db"]
-    if i["pan"] != 0.0:
-        newSound = newSound.pan(i["pan"])
-    baseAudio = baseAudio.overlay(newSound, position=i["start"])
-    sys.stdout.write('\r')
-    sys.stdout.write("%s%%" % round(1.0*(index+1)/instructionCount*100,1))
-    sys.stdout.flush()
+for track in tracks:
+    baseAudio = baseAudio.overlay(track)
 
 print("Writing to file...")
 format = OUTPUT_FILE.split(".")[-1]

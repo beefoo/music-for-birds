@@ -83,7 +83,7 @@ elif MODE == "loop":
     offsetStep = BEAT / counts
     volumeMultiplier = 0.5
     for i in range(sampleCount):
-        offset = i % 4 * offsetStep
+        offset = i % counts * offsetStep
         xOffset = 1.0 * i / sampleCount
         for j in range(beats):
             x = 1.0 * j / (beats-1) + xOffset
