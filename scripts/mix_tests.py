@@ -11,9 +11,9 @@ import sys
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-audio', dest="INPUT_AUDIO", default="../audio/output/birds/*.wav", help="Input audio file pattern")
-parser.add_argument('-mode', dest="MODE", default="arch", help="Possible values: volume, pan, loop, arch")
+parser.add_argument('-mode', dest="MODE", default="loop", help="Possible values: volume, pan, loop")
 parser.add_argument('-dur', dest="DUR", default=120, type=int, help="Duration in seconds")
-parser.add_argument('-beat', dest="BEAT", default=500, type=int, help="Beat in ms")
+parser.add_argument('-beat', dest="BEAT", default=1000, type=int, help="Beat in ms")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/sample/mix.txt", help="Output file")
 args = parser.parse_args()
 
@@ -73,6 +73,30 @@ elif MODE == "pan":
             "volume": 1.0,
             "pan": pan
         })
+
+elif MODE == "loop":
+    samples = [os.path.basename(fn) for fn in files]
+    sampleCount = len(samples)
+    counts = 16
+    panPhases = 6
+    volumePhases = 4
+    offsetStep = BEAT / counts
+    volumeMultiplier = 0.5
+    for i in range(sampleCount):
+        offset = i % 4 * offsetStep
+        xOffset = 1.0 * i / sampleCount
+        for j in range(beats):
+            x = 1.0 * j / (beats-1) + xOffset
+            volume = 0.5*math.sin(x*volumePhases*math.pi)+0.5
+            pan = math.sin(x*panPhases*math.pi)
+            volume = round(volume, PRECISION)
+            pan = round(pan, PRECISION)
+            instructions.append({
+                "start": j * BEAT + offset,
+                "soundIndex": i,
+                "volume": volume * volumeMultiplier,
+                "pan": pan
+            })
 
 # build output file
 lines = []
