@@ -8,6 +8,7 @@ import os
 from pprint import pprint
 from pydub import AudioSegment
 import sys
+from utils import volumeToDb
 
 # input
 parser = argparse.ArgumentParser()
@@ -30,13 +31,6 @@ OUTPUT_FILE = args.OUTPUT_FILE
 
 MIN_VOLUME = 0.01
 MAX_VOLUME = 10.0
-
-def volumeToDb(volume):
-    db = 0.0
-    if volume < 1.0 or volume > 1.0:
-        # half volume = −6db = 10*log(0.5*0.5)
-        db = 10.0 * math.log(volume**2)
-    return db
 
 # Read input file
 lines = [line.strip() for line in open(INPUT_FILE)]
