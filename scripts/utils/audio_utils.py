@@ -8,12 +8,12 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 import numpy as np
 import os
+from pprint import pprint
 import re
 import sys
 
-def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, amp_threshold=-1, plot=False):
+def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False):
     basename = os.path.basename(fn).split('.')[0]
-    hop_length = fft/4
 
     # load audio
     y, sr = librosa.load(fn)
@@ -63,12 +63,14 @@ def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, amp_threshold=-1, 
             "index": i,
             "parent": basename,
             "filename": sampleFilename,
-            "start": start,
+            "start": startms,
             "dur": dur,
             "power": power,
             "hz": hz,
             "note": note,
-            "octave": octave
+            "octave": octave,
+            "left": left,
+            "right": right
         })
         i+=1
         # print("pos=%s, dur=%s, hz=%s (%s) power=%s" % (start, dur, hz, note, power))
@@ -76,7 +78,44 @@ def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, amp_threshold=-1, 
     if plot:
         showAudioPlot(y, e, slices)
 
-    return (sampleData, ysamples, sr)
+    return (sampleData, ysamples, y, sr)
+
+def getPhrases(sampleData, minLen, maxLen, maxSilence, minNotesPerPhrase=2):
+    # conver to ms
+    minLen *= 1000
+    maxLen *= 1000
+    maxSilence *= 1000
+    # build phrases
+    phrases = []
+    currentPhrase = []
+    prevMs = None
+    for s in sampleData:
+        start = s["start"]
+        if prevMs is not None and (start-prevMs) > maxSilence:
+            phrases.append({ "phrase": currentPhrase[:] })
+            currentPhrase = []
+        else:
+            currentPhrase.append(s)
+        prevMs = start + s["dur"]
+    phrases.append({ "phrase": currentPhrase[:] })
+
+    # remove phrases with too little notes
+    phrases = [p for p in phrases if len(p["phrase"]) >= minNotesPerPhrase]
+
+    # add metadata
+    for i, p in enumerate(phrases):
+        phrase = p["phrase"]
+        first = phrase[0]
+        last = phrase[-1]
+        phrases[i]["start"] = first["start"]
+        phrases[i]["dur"] = (last["start"]+last["dur"])-first["start"]
+        phrases[i]["left"] = first["left"]
+        phrases[i]["right"] = last["right"]
+
+    # remove phrases too long or short
+    phrases = [p for p in phrases if minLen <= p["dur"] <= maxLen]
+
+    return phrases
 
 def getSlices(e, ampMin, minLen, maxLen):
     stdev = np.std(e)
