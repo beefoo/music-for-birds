@@ -92,6 +92,7 @@ var AppBrowsePhrases = (function() {
 
     this.$imageWrapper.on("mouseover", function(e){ listening = true; });
     this.$imageWrapper.on("mouseout", function(e){ listening = false; });
+    this.$imageWrapper.on("click", function(e){ _this.onPhraseSelect(); });
 
     $(document).on("mousemove", function(e){
       if (listening) _this.onImageOver(e.pageX, e.pageY);
@@ -103,9 +104,17 @@ var AppBrowsePhrases = (function() {
   AppBrowsePhrases.prototype.onImageOver = function(wx, wy){
     var y = wy - this.imageOffset.top;
     var index = parseInt(y / this.rowHeight);
+    this.currentPhrase = this.data[index];
 
     this.$imageHelper.css('top', (index*this.rowHeight)+"px");
     this.$imageLabel.text(this.data[index].parent);
+  };
+
+  AppBrowsePhrases.prototype.onPhraseSelect = function(){
+    if (!this.currentPhrase) return false;
+    var phrase = this.currentPhrase;
+
+    this.play(phrase);
   };
 
   AppBrowsePhrases.prototype.onReady = function(){
@@ -118,7 +127,9 @@ var AppBrowsePhrases = (function() {
   };
 
   AppBrowsePhrases.prototype.parseData = function(data){
-    return _.map(data, function(entry){
+    var audioDir = this.opt.audioDir;
+    var audioExt = this.opt.audioExt;
+    return _.map(data, function(entry, i){
       if (!entry.phrase) return entry;
       var phrase = entry.phrase.split(",");
       var keys = ["start", "dur", "power", "hz", "note", "octave"];
@@ -126,8 +137,31 @@ var AppBrowsePhrases = (function() {
         var values = _.map(note.split(":"), function(v){ return parseNumber(v); });
         return _.object(keys, values);
       });
+      entry.audioFile = audioDir + entry.parent + audioExt;
+      entry.index = i;
       return entry;
     });
+  };
+
+  AppBrowsePhrases.prototype.play = function(entry){
+    if (entry.index !== this.soundIndex) {
+      if (this.sound) this.sound.unload();
+      var sound = new Howl({
+        src: entry.audioFile,
+        sprite: {
+          "phrase": [entry.start, entry.dur]
+        }
+      });
+      sound.once('load', function(){
+        sound.play("phrase");
+      });
+      this.sound = sound;
+
+    } else if (this.sound && this.sound.state()==="loaded") {
+      this.sound.play("phrase");
+    }
+
+    this.soundIndex = entry.index;
   };
 
   return AppBrowsePhrases;
