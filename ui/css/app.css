@@ -12,8 +12,8 @@ body {
   position: absolute;
   left: 0;
   width: 100%;
-  /* border: 100vh solid rgba(0,0,0,0.2); */
-  box-shadow: 0 0 0 150vh rgba(0,0,0,0.4);
+  border: 2px solid red;
+  /* box-shadow: 0 0 0 150vh rgba(0,0,0,0.4); */
   box-sizing: border-box;
 }
 .image-label {
