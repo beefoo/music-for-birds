@@ -2,8 +2,8 @@
 
 import argparse
 import csv
+import numpy as np
 import os
-from PIL import Image, ImageDraw
 from pprint import pprint
 import sys
 from utils import readCsv, norm
@@ -14,12 +14,16 @@ parser.add_argument('-in', dest="INPUT_FILE", default="../data/output/birds_audi
 parser.add_argument('-img', dest="IMAGE_FILE", default="../data/output/birds_audio_phrases.png", help="Output image file")
 parser.add_argument('-width', dest="IMAGE_WIDTH", default=800, type=int, help="Width of image")
 parser.add_argument('-rowh', dest="ROW_HEIGHT", default=10, type=int, help="Height of image row")
+parser.add_argument('-draw', dest="DRAW_IMAGE", default=0, type=int, help="Should draw image?")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_phrase_stats.csv", help="Output csv file")
 args = parser.parse_args()
 
 INPUT_FILE = args.INPUT_FILE
 IMAGE_FILE = args.IMAGE_FILE
 IMAGE_WIDTH = args.IMAGE_WIDTH
 ROW_HEIGHT = args.ROW_HEIGHT
+DRAW_IMAGE = args.DRAW_IMAGE > 0
+OUTPUT_FILE = args.OUTPUT_FILE
 
 COLORS = {
     "A": (120, 28, 129),
@@ -57,30 +61,68 @@ for i, entry in enumerate(data):
         }
     data[i]["phrase"] = phrase
 
+# calculate standard deviations for frequency and rhythms
+for i, entry in enumerate(data):
+    hzs = []
+    durs = []
+    pows = []
+    deltas = []
+    phrase = entry["phrase"]
+    for j, note in enumerate(phrase):
+        hzs.append(note["hz"])
+        durs.append(note["dur"])
+        pows.append(note["power"])
+        if j > 0:
+            deltas.append(note["start"]-phrase[j-1]["start"])
+    data[i]["count"] = len(phrase)
+    data[i]["hzMean"] = round(np.mean(hzs), 2)
+    data[i]["durMean"] = round(np.mean(durs), 2)
+    data[i]["powMean"] = round(np.mean(pows), 2)
+    data[i]["hzStd"] = round(np.std(hzs), 2)
+    data[i]["beatStd"] = round((np.std(durs) + np.std(deltas)) * 0.5, 4)
+
+
 maxDur = max([d["dur"] for d in data])
 print("Max duration is %sms" % maxDur)
 
-IMAGE_HEIGHT = ROW_HEIGHT * rowCount
-print("Creating %s x %s image" % (IMAGE_WIDTH, IMAGE_HEIGHT))
 
-im = Image.new(mode="RGB", size=(IMAGE_WIDTH, IMAGE_HEIGHT), color="white")
+if DRAW_IMAGE:
+    from PIL import Image, ImageDraw
 
-draw = ImageDraw.Draw(im)
-for i, entry in enumerate(data):
-    y0 = i * ROW_HEIGHT
-    y1 = (i+1) * ROW_HEIGHT
-    start = entry["start"]
-    end = entry["start"]+entry["dur"]
-    width = 1.0 * entry["dur"] / maxDur * IMAGE_WIDTH
-    for note in entry["phrase"]:
-        color = COLORS[note["note"]]
-        x0 = norm(note["start"], start, end) * width
-        x1 = norm(note["start"]+note["dur"], start, end) * width
-        draw.rectangle([x0, y0, x1, y1], fill=color, outline="white")
-    sys.stdout.write('\r')
-    sys.stdout.write("%s%%" % round(1.0*(i+1)/rowCount*100,1))
-    sys.stdout.flush()
-del draw
+    IMAGE_HEIGHT = ROW_HEIGHT * rowCount
+    print("Creating %s x %s image" % (IMAGE_WIDTH, IMAGE_HEIGHT))
+    im = Image.new(mode="RGB", size=(IMAGE_WIDTH, IMAGE_HEIGHT), color="white")
 
-# write to stdout
-im.save(IMAGE_FILE, "PNG")
+    draw = ImageDraw.Draw(im)
+    for i, entry in enumerate(data):
+        y0 = i * ROW_HEIGHT
+        y1 = (i+1) * ROW_HEIGHT
+        start = entry["start"]
+        end = entry["start"]+entry["dur"]
+        width = 1.0 * entry["dur"] / maxDur * IMAGE_WIDTH
+        for note in entry["phrase"]:
+            color = COLORS[note["note"]]
+            x0 = norm(note["start"], start, end) * width
+            x1 = norm(note["start"]+note["dur"], start, end) * width
+            draw.rectangle([x0, y0, x1, y1], fill=color, outline="white")
+        sys.stdout.write('\r')
+        sys.stdout.write("%s%%" % round(1.0*(i+1)/rowCount*100,1))
+        sys.stdout.flush()
+    del draw
+
+    # write to stdout
+    im.save(IMAGE_FILE, "PNG")
+    print("Wrote %s" % IMAGE_FILE)
+
+headings = ["parent", "start", "dur", "count", "hzMean", "durMean", "powMean", "hzStd", "beatStd"]
+with open(OUTPUT_FILE, 'wb') as f:
+    writer = csv.writer(f)
+    writer.writerow(headings)
+    rows = []
+    for entry in data:
+        row = []
+        for key in headings:
+            row.append(entry[key])
+        rows.append(row)
+    writer.writerows(rows)
+    print "Wrote %s rows to %s" % (len(rows), OUTPUT_FILE)
