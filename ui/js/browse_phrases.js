@@ -4,7 +4,7 @@ var AppBrowsePhrases = (function() {
 
   function AppBrowsePhrases(config) {
     var defaults = {
-      dataFile: "/data/output/birds_audio_phrases.csv",
+      dataFile: "/data/output/birds_audio_phrase_stats_ui.csv",
       imgFile: "/data/output/birds_audio_phrases.png",
       audioDir: "/audio/downloads/birds/",
       audioExt: ".mp3"
@@ -130,13 +130,13 @@ var AppBrowsePhrases = (function() {
     var audioDir = this.opt.audioDir;
     var audioExt = this.opt.audioExt;
     return _.map(data, function(entry, i){
-      if (!entry.phrase) return entry;
-      var phrase = entry.phrase.split(",");
-      var keys = ["start", "dur", "power", "hz", "note", "octave"];
-      entry.phrase = _.map(phrase, function(note){
-        var values = _.map(note.split(":"), function(v){ return parseNumber(v); });
-        return _.object(keys, values);
-      });
+      // if (!entry.phrase) return entry;
+      // var phrase = entry.phrase.split(",");
+      // var keys = ["start", "dur", "power", "hz", "note", "octave"];
+      // entry.phrase = _.map(phrase, function(note){
+      //   var values = _.map(note.split(":"), function(v){ return parseNumber(v); });
+      //   return _.object(keys, values);
+      // });
       entry.audioFile = audioDir + entry.parent + audioExt;
       entry.index = i;
       return entry;

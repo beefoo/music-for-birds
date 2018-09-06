@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# Usage: python phrases_stats.py -min 5 -mind 1200 -out "../data/output/birds_audio_phrase_stats_ui.csv" -rowh 4 -draw 1
+
 import argparse
 import csv
 import numpy as np
@@ -15,6 +17,8 @@ parser.add_argument('-img', dest="IMAGE_FILE", default="../data/output/birds_aud
 parser.add_argument('-width', dest="IMAGE_WIDTH", default=800, type=int, help="Width of image")
 parser.add_argument('-rowh', dest="ROW_HEIGHT", default=10, type=int, help="Height of image row")
 parser.add_argument('-draw', dest="DRAW_IMAGE", default=0, type=int, help="Should draw image?")
+parser.add_argument('-min', dest="MIN_NOTES_PER_PHRASE", default=2, type=int, help="Minimum amounts of notes to be considered a phrase")
+parser.add_argument('-mind', dest="MIN_DURATION", default=500, type=int, help="Minimum duration of phrase in ms")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_phrase_stats.csv", help="Output csv file")
 args = parser.parse_args()
 
@@ -23,6 +27,8 @@ IMAGE_FILE = args.IMAGE_FILE
 IMAGE_WIDTH = args.IMAGE_WIDTH
 ROW_HEIGHT = args.ROW_HEIGHT
 DRAW_IMAGE = args.DRAW_IMAGE > 0
+MIN_NOTES_PER_PHRASE = args.MIN_NOTES_PER_PHRASE
+MIN_DURATION = args.MIN_DURATION
 OUTPUT_FILE = args.OUTPUT_FILE
 
 COLORS = {
@@ -61,6 +67,11 @@ for i, entry in enumerate(data):
         }
     data[i]["phrase"] = phrase
 
+# remove invalid phrases
+data = [d for d in data if d["dur"] >= MIN_DURATION and len(d["phrase"]) >= MIN_NOTES_PER_PHRASE]
+rowCount = len(data)
+print("Found %s valid rows in %s" % (rowCount, INPUT_FILE))
+
 # calculate standard deviations for frequency and rhythms
 for i, entry in enumerate(data):
     hzs = []
@@ -75,16 +86,15 @@ for i, entry in enumerate(data):
         if j > 0:
             deltas.append(note["start"]-phrase[j-1]["start"])
     data[i]["count"] = len(phrase)
-    data[i]["hzMean"] = round(np.mean(hzs), 2)
-    data[i]["durMean"] = round(np.mean(durs), 2)
-    data[i]["powMean"] = round(np.mean(pows), 2)
-    data[i]["hzStd"] = round(np.std(hzs), 2)
-    data[i]["beatStd"] = round((np.std(durs) + np.std(deltas)) * 0.5, 4)
-
+    data[i]["hzMean"] = int(round(np.mean(hzs)))
+    data[i]["durMean"] = int(round(np.mean(durs)))
+    data[i]["powMean"] = round(np.mean(pows), 1)
+    data[i]["hzStd"] = int(round(np.std(hzs)))
+    data[i]["beatStd"] = int(round((np.std(durs) + np.std(deltas)) * 0.5))
+    data[i]["notes"] = "".join(list(set([n["note"] for n in phrase])))
 
 maxDur = max([d["dur"] for d in data])
 print("Max duration is %sms" % maxDur)
-
 
 if DRAW_IMAGE:
     from PIL import Image, ImageDraw
@@ -114,7 +124,7 @@ if DRAW_IMAGE:
     im.save(IMAGE_FILE, "PNG")
     print("Wrote %s" % IMAGE_FILE)
 
-headings = ["parent", "start", "dur", "count", "hzMean", "durMean", "powMean", "hzStd", "beatStd"]
+headings = ["parent", "start", "dur", "count", "hzMean", "durMean", "powMean", "hzStd", "beatStd", "notes"]
 with open(OUTPUT_FILE, 'wb') as f:
     writer = csv.writer(f)
     writer.writerow(headings)
