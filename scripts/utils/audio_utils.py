@@ -32,7 +32,7 @@ def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, am
 
     slices = getSlices(e, amp_threshold, min_duration_frames, max_duration_frames)
     sliceCount = len(slices)
-    print("Found %s samples in %s" % (sliceCount, basename))
+    # print("Found %s samples in %s" % (sliceCount, basename))
     sampleData = []
     ysamples = []
     i = 0

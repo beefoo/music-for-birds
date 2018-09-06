@@ -64,8 +64,10 @@ for outDir in outDirs:
     if not os.path.exists(outDir):
         os.makedirs(outDir)
 
+progress = 0
 # files = [files[2]]
 def makeSamples(fn):
+    global progress
     sampleData, ysamples, y, sr = getAudioSamples(fn, min_dur=MIN_DUR, max_dur=MAX_DUR, fft=FFT, hop_length=HOP_LEN, amp_threshold=AMP_THESHOLD, plot=PLOT)
 
     # if too many samples, take the ones with the most power
@@ -84,6 +86,11 @@ def makeSamples(fn):
 
     # sort chronologically
     sampleData = sorted(sampleData, key=lambda k: k['start'])
+
+    progress += 1
+    sys.stdout.write('\r')
+    sys.stdout.write("%s%%" % round(1.0*progress/fileCount*100,1))
+    sys.stdout.flush()
 
     return sampleData
 
