@@ -66,14 +66,16 @@ for outDir in outDirs:
         os.makedirs(outDir)
 
 # files = [files[2]]
+progress = 0
 def makePhrases(fn):
+    global progress
     # get sample data
     basename = os.path.basename(fn).split('.')[0]
     sampleData, ysamples, y, sr = getAudioSamples(fn, min_dur=MIN_DUR, max_dur=MAX_DUR, fft=FFT, hop_length=HOP_LEN, amp_threshold=AMP_THESHOLD, plot=PLOT)
 
     # get phrases from sample data
     phrases = getPhrases(sampleData, minLen=MIN_PHRASE_DUR, maxLen=MAX_PHRASE_DUR, maxSilence=MAX_SILENCE)
-    print "Found %s phrases in %s" % (len(phrases), basename)
+    # print "Found %s phrases in %s" % (len(phrases), basename)
 
     # add metadata
     for i, phrase in enumerate(phrases):
@@ -91,6 +93,11 @@ def makePhrases(fn):
                 sample = np.copy(ysample)
                 sample /= np.abs(sample).max()
                 librosa.output.write_wav(outFn, sample, sr)
+
+    progress += 1
+    sys.stdout.write('\r')
+    sys.stdout.write("%s%%" % round(1.0*progress/fileCount*100,1))
+    sys.stdout.flush()
 
     return phrases
 
