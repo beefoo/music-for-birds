@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Usage: python phrases_stats.py -min 5 -mind 1200 -out "../data/output/birds_audio_phrase_stats_ui.csv" -rowh 4 -draw 1
+#        python phrases_stats.py -min 3 -mind 800 -out "../data/output/birds_audio_phrase_stats_query.csv"
 
 import argparse
 import csv

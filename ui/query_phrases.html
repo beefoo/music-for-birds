@@ -1,0 +1,89 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Music for Birds UI</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+  <div id="app" class="app">
+    <div class="query-panel panel">
+      <form class="query-form">
+        <label for="range-count">Count range</label>
+        <input type="text" id="range-count" readonly />
+        <div id="slider-count" class="slider" data-key="count" data-target="#range-count"></div>
+
+        <label for="range-dur">Duration range</label>
+        <input type="text" id="range-dur" readonly />
+        <div id="slider-dur" class="slider" data-key="dur" data-target="#range-dur"></div>
+
+        <label for="range-ndur">Note duration range</label>
+        <input type="text" id="range-ndur" readonly />
+        <div id="slider-ndur" class="slider" data-key="durMean" data-target="#range-ndur"></div>
+
+        <label for="range-pow">Power range</label>
+        <input type="text" id="range-pow" readonly />
+        <div id="slider-pow" class="slider" data-key="powMean" data-target="#range-pow"></div>
+
+        <label for="range-hz">Hz variance range</label>
+        <input type="text" id="range-hz" readonly />
+        <div id="slider-hz" class="slider" data-key="hzStd" data-target="#range-hz"></div>
+
+        <label for="range-beat">Beat variance range</label>
+        <input type="text" id="range-beat" readonly />
+        <div id="slider-beat" class="slider" data-key="beatStd" data-target="#range-beat"></div>
+
+        <fieldset>
+          <legend>Select notes</legend>
+          <input type="checkbox" name="select-notes" id="input-note-a" value="A" /> <label for="input-note-a">A</label>
+          <input type="checkbox" name="select-notes" id="input-note-as" value="A#" /> <label for="input-note-as">A#</label>
+          <input type="checkbox" name="select-notes" id="input-note-b" value="B" /> <label for="input-note-b">B</label>
+          <input type="checkbox" name="select-notes" id="input-note-bs" value="B#" /> <label for="input-note-bs">B#</label>
+          <input type="checkbox" name="select-notes" id="input-note-c" value="C" /> <label for="input-note-c">C</label>
+          <input type="checkbox" name="select-notes" id="input-note-cs" value="C#" /> <label for="input-note-cs">C#</label>
+          <input type="checkbox" name="select-notes" id="input-note-d" value="D" /> <label for="input-note-d">D</label>
+          <input type="checkbox" name="select-notes" id="input-note-ds" value="D#" /> <label for="input-note-ds">D#</label>
+          <input type="checkbox" name="select-notes" id="input-note-e" value="E" /> <label for="input-note-e">E</label>
+          <input type="checkbox" name="select-notes" id="input-note-es" value="E#" /> <label for="input-note-es">E#</label>
+          <input type="checkbox" name="select-notes" id="input-note-f" value="F" /> <label for="input-note-f">F</label>
+          <input type="checkbox" name="select-notes" id="input-note-fs" value="F#" /> <label for="input-note-fs">F#</label>
+          <input type="checkbox" name="select-notes" id="input-note-g" value="G" /> <label for="input-note-g">G</label>
+          <input type="checkbox" name="select-notes" id="input-note-gs" value="G#" /> <label for="input-note-gs">G#</label>
+        </fieldset>
+        <fieldset>
+          <legend>Sort by</legend>
+          <input type="radio" name="select-sort" id="input-sort-count" value="count" /> <label for="input-sort-count">Count</label>
+          <input type="radio" name="select-sort" id="input-sort-dur" value="dur" /> <label for="input-sort-dur">Duration</label>
+          <input type="radio" name="select-sort" id="input-sort-hz" value="hzMean" /> <label for="input-sort-hz">Hz</label>
+          <input type="radio" name="select-sort" id="input-sort-pow" value="powMean" /> <label for="input-sort-pow">Power</label>
+          <input type="radio" name="select-sort" id="input-sort-ndur" value="durMean" /> <label for="input-sort-ndur">Note duration</label>
+          <input type="radio" name="select-sort" id="input-sort-hzstd" value="hzStd" /> <label for="input-sort-hzstd">Hz variance</label>
+          <input type="radio" name="select-sort" id="input-sort-beatstd" value="beatStd" /> <label for="input-sort-beatstd">Beat variance</label>
+        </fieldset>
+        <fieldset>
+          <legend>Sort direction</legend>
+          <input type="radio" name="select-direction" id="input-sort-asc" value="asc" /> <label for="input-sort-asc">Asc</label>
+          <input type="radio" name="select-direction" id="input-sort-desc" value="desc" /> <label for="input-sort-desc">Desc</label>
+        </fieldset>
+      </form>
+    </div>
+    <div class="results-panel panel">
+      <table id="results-table" class="results-table"></table>
+    </div>
+  </div>
+
+  <script src="js/vendor/jquery-3.3.1.min.js"></script>
+  <script src="js/vendor/jquery-ui.slider.min.js"></script>
+  <script src="js/vendor/underscore-min.js"></script>
+  <script src="js/vendor/howler.min.js"></script>
+  <script src="js/vendor/papaparse.min.js"></script>
+  <script src="js/query_phrases.js"></script>
+</body>
+
+</html>
