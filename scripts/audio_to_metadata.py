@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Usage: python audio_to_metadata.py -in "../audio/downloads/*.mp3"
+# Usage: python audio_to_metadata.py -in "../audio/downloads/birds/*.mp3"
 
 import argparse
 import csv
@@ -35,6 +35,15 @@ outDir = os.path.dirname(OUTPUT_FILE)
 if not os.path.exists(outDir):
     os.makedirs(outDir)
 
+def isDateStr(str):
+    return re.match("[0-9]+ [A-Z][a-z]+ [0-9]{4}", str)
+
+def isUid(str):
+    return re.match("ML [0-9]+", str)
+
+def isAuthor(str):
+    return ("." in str or "Sharon" in str or "Richard" in str)
+
 def readFile(f):
     global progress
     fname = os.path.basename(f)
@@ -48,12 +57,20 @@ def readFile(f):
     # parse filename for metadata
     name = ""
     sampleNumber = 0
+    placecode = ""
     description = ""
-    matches = re.match("([A-Z].+) ([0-9]+) ([A-Z].+)", basename)
+    matches = re.match("([A-Z].+) ([0-9]+) ([A-Z]+?) ([A-Z0-9].+)", basename)
     if matches:
         name = matches.group(1)
         sampleNumber = int(matches.group(2))
-        description = matches.group(3)
+        placecode = matches.group(3)
+        description = matches.group(4)
+    else:
+        matches = re.match("([A-Z].+) ([0-9]+) ([A-Z0-9].+)", basename)
+        if matches:
+            name = matches.group(1)
+            sampleNumber = int(matches.group(2))
+            description = matches.group(3)
 
     # parse comments for metadata
     comments = []
@@ -61,9 +78,41 @@ def readFile(f):
         comments = [c.strip() for c in str(audio.tags["COMM::ENG"]).split(";")]
     clen = len(comments)
     species = "" if clen <= 0 else comments[0]
-    place = ["", ""] if clen <= 1 else  [c.strip() for c in comments[1].split(",")]
-    authors = [] if clen <= 2 else [c.strip() for c in comments[2].split(",")]
-    uid = "" if clen <= 3 else comments[3]
+    place = ["", ""]
+    date = ""
+    authors = []
+    uid = ""
+
+    # e.g. Maine, United States; Gregory F. Budney
+    if clen == 2:
+        species = ""
+        place = [c.strip() for c in comments[0].split(",")]
+        authors = [c.strip() for c in comments[1].split(",")]
+    # e.g. Agelaius phoeniceus; Richard W. Simmers; ML 12354
+    elif clen == 3:
+        c1 = comments[1]
+        if isDateStr(c1):
+            date = c1
+        elif isAuthor(c1):
+            authors =  [c.strip() for c in c1.split(",")]
+        else:
+            place = [c.strip() for c in c1.split(",")]
+        uid = comments[2]
+    # e.g. Anous stolidus; 21 April 1985; Edward H. Miller; ML 117673
+    elif clen == 4:
+        c1 = comments[1]
+        if isDateStr(c1):
+            date = c1
+        else:
+            place = [c.strip() for c in c1.split(",")]
+        authors =  [c.strip() for c in comments[2].split(",")]
+        uid = comments[3]
+    # standard case, e.g. Agelaius phoeniceus; Maryland, United States; 27 February 1998; Wilbur L. Hershberger; ML 94215
+    elif clen == 5:
+        place = [c.strip() for c in comments[1].split(",")]
+        date = comments[2]
+        authors =  [c.strip() for c in comments[3].split(",")]
+        uid = comments[4]
 
     # parse place
     state = ""
@@ -90,7 +139,9 @@ def readFile(f):
         "species": species,
         "state": state,
         "country": country,
+        "placecode": placecode,
         "authors": ", ".join(authors),
+        "date": date,
         "uid": uid,
         "groups": ", ".join(groups)
     }
@@ -102,13 +153,15 @@ def readFile(f):
     sys.stdout.flush()
     return entry
 
+# files = files[:100]
+
 pool = ThreadPool()
 metadata = pool.map(readFile, files)
 pool.close()
 pool.join()
 
 print("Writing data to file...")
-headings = ["filename", "uid", "name", "species", "description", "groups", "sample", "duration", "state", "country", "authors"]
+headings = ["filename", "uid", "name", "species", "description", "groups", "sample", "duration", "state", "country", "placecode", "date", "authors"]
 with open(OUTPUT_FILE, 'wb') as f:
     writer = csv.writer(f)
     writer.writerow(headings)
