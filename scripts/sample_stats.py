@@ -12,7 +12,7 @@ from utils import readCsv
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/output/birds_audio_samples.csv", help="Input csv file")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_sample_stats.csv", help="Output csv file")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_sample_stats_%s.csv", help="Output csv file")
 parser.add_argument('-plot', dest="PLOT", default=0, type=int, help="Whether to show plot")
 args = parser.parse_args()
 
@@ -61,3 +61,17 @@ if PLOT:
     plt.xlabel("Power")
     plt.ylabel("Frequency (Hz)")
     plt.show()
+
+def writeCsv(filename, data, headings):
+    with open(filename, 'wb') as f:
+        writer = csv.writer(f)
+        writer.writerow(headings)
+        rows = [list(d) for d in data]
+        writer.writerows(rows)
+        print "Wrote %s rows to %s" % (len(rows), filename)
+
+headings = ["Value", "Frequency"]
+writeCsv(OUTPUT_FILE % "notes", noteCounter.most_common(), headings)
+writeCsv(OUTPUT_FILE % "octaves", octaveCounter.most_common(), headings)
+headings = ["Note", "Octave", "Frequency"]
+writeCsv(OUTPUT_FILE % "note_octaves", [(noteoctave[:-1], int(noteoctave[-1:]), freq) for noteoctave, freq in noteOctaveCounter.most_common()], headings)
