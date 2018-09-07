@@ -22,6 +22,7 @@ var AppQueryPhrases = (function() {
 
   AppQueryPhrases.prototype.init = function(){
     this.$el = $("#app");
+    this.$resultCount = $("#result-count");
 
     var _this = this;
     var dataPromise = this.loadData(this.opt.dataFile);
@@ -30,6 +31,14 @@ var AppQueryPhrases = (function() {
     $.when.apply($, [dataPromise]).then(function(){
       _this.onReady();
       _this.loadListeners();
+    });
+  };
+
+  AppQueryPhrases.prototype.getSelectValues = function(){
+    this.sortBy = $('input[name="select-sort"]:checked').val();
+    this.sortDirection = parseInt($('input[name="select-direction"]:checked').val());
+    this.notes = $('input[name="select-notes"]:checked').map(function(){
+      return $(this).val();
     });
   };
 
@@ -59,6 +68,10 @@ var AppQueryPhrases = (function() {
 
   AppQueryPhrases.prototype.loadListeners = function(){
     var _this = this;
+
+    $('input[type="checkbox"], input[type="radio"]').on("change", function(e){
+      _this.query();
+    });
   };
 
   AppQueryPhrases.prototype.loadSlider = function($slider){
@@ -88,6 +101,7 @@ var AppQueryPhrases = (function() {
 
   AppQueryPhrases.prototype.loadUi = function(){
     var _this = this;
+
     $('.slider').each(function(){
       _this.loadSlider($(this));
     });
@@ -135,11 +149,43 @@ var AppQueryPhrases = (function() {
   };
 
   AppQueryPhrases.prototype.query = function(){
+    this.getSelectValues();
 
+    var sortBy = this.sortBy;
+    var sortDirection = this.sortDirection;
+    var notes = this.notes;
+    var ranges = this.ranges;
+    // console.log(sortBy, sortDirection, notes.length, ranges);
+
+    var results = _.filter(this.data, function(d){
+      var valid = true;
+      if (notes.length) {
+        valid = _.every(notes, function(note){
+          return d.notes.includes(note);
+        });
+      }
+      if (valid) {
+        valid = _.every(ranges, function(values, key){
+          return d[key] >= values[0] && d[key] <= values[1];
+        });
+      }
+      return valid;
+    });
+
+    results = _.sortBy(results, function(d){
+      return sortDirection * d[sortBy];
+    });
+
+    this.render(results);
   };
 
-  AppQueryPhrases.prototype.render = function(){
+  AppQueryPhrases.prototype.render = function(results){
+    this.$resultCount.text(results.length);
 
+    var resultLimit = this.opt.resultLimit;
+    if (results.length > resultLimit) {
+      results = results.slice(0, resultLimit);
+    }
   };
 
   return AppQueryPhrases;

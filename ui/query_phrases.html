@@ -27,13 +27,17 @@
         <input type="text" id="range-ndur" readonly />
         <div id="slider-ndur" class="slider" data-key="durMean" data-target="#range-ndur"></div>
 
+        <label for="range-hz">Hz range</label>
+        <input type="text" id="range-hz" readonly />
+        <div id="slider-hz" class="slider" data-key="hzMean" data-target="#range-hz"></div>
+
         <label for="range-pow">Power range</label>
         <input type="text" id="range-pow" readonly />
         <div id="slider-pow" class="slider" data-key="powMean" data-target="#range-pow"></div>
 
-        <label for="range-hz">Hz variance range</label>
-        <input type="text" id="range-hz" readonly />
-        <div id="slider-hz" class="slider" data-key="hzStd" data-target="#range-hz"></div>
+        <label for="range-hzv">Hz variance range</label>
+        <input type="text" id="range-hzv" readonly />
+        <div id="slider-hzv" class="slider" data-key="hzStd" data-target="#range-hzv"></div>
 
         <label for="range-beat">Beat variance range</label>
         <input type="text" id="range-beat" readonly />
@@ -64,16 +68,17 @@
           <input type="radio" name="select-sort" id="input-sort-pow" value="powMean" /> <label for="input-sort-pow">Power</label>
           <input type="radio" name="select-sort" id="input-sort-ndur" value="durMean" /> <label for="input-sort-ndur">Note duration</label>
           <input type="radio" name="select-sort" id="input-sort-hzstd" value="hzStd" /> <label for="input-sort-hzstd">Hz variance</label>
-          <input type="radio" name="select-sort" id="input-sort-beatstd" value="beatStd" /> <label for="input-sort-beatstd">Beat variance</label>
+          <input type="radio" name="select-sort" id="input-sort-beatstd" value="beatStd" checked /> <label for="input-sort-beatstd">Beat variance</label>
         </fieldset>
         <fieldset>
           <legend>Sort direction</legend>
-          <input type="radio" name="select-direction" id="input-sort-asc" value="asc" /> <label for="input-sort-asc">Asc</label>
-          <input type="radio" name="select-direction" id="input-sort-desc" value="desc" /> <label for="input-sort-desc">Desc</label>
+          <input type="radio" name="select-direction" id="input-sort-asc" value="1" /> <label for="input-sort-asc">Asc</label>
+          <input type="radio" name="select-direction" id="input-sort-desc" value="-1" checked /> <label for="input-sort-desc">Desc</label>
         </fieldset>
       </form>
     </div>
     <div class="results-panel panel">
+      <p><span id="result-count">--</span> results found</p>
       <table id="results-table" class="results-table"></table>
     </div>
   </div>
