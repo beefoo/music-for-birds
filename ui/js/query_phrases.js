@@ -106,7 +106,7 @@ var AppQueryPhrases = (function() {
       _this.savedData = data;
       console.log("Found "+data.length+" saved entries");
       deferred.resolve();
-      
+
     }).fail(function() {
       _this.savedData = [];
       console.log("No saved data found");
@@ -268,14 +268,12 @@ var AppQueryPhrases = (function() {
     var $buttons = $('.save-button[data-parent="'+parent+'"]');
 
     if (wasSaved) {
-      this.savedData = this.savedData.splice(index, 1);
+      this.savedData.splice(index, 1);
       $buttons.text('save').removeClass('saved');
     } else {
       this.savedData.push(entry.parent);
       $buttons.text('saved').addClass('saved');
     }
-
-
 
     this.saveData();
   };
@@ -309,7 +307,7 @@ var AppQueryPhrases = (function() {
         _this.isSaving = false;
         _this.saveQueue();
       },
-      success: function(){ console.log('Data saved'); },
+      success: function(d){ console.log(d.data.length+' entries saved'); },
       error: function(){ console.log('Error with saving data'); }
     });
   };

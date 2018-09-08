@@ -23,6 +23,7 @@ app.post('/save', function (req, res) {
   // return response
   res.send({
     status: 1,
+    data: data,
     message: "Success"
   });
 });
