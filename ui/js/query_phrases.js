@@ -7,7 +7,8 @@ var AppQueryPhrases = (function() {
       dataFile: "/data/output/birds_audio_phrase_stats_query.csv",
       audioDir: "/audio/downloads/birds/",
       audioExt: ".mp3",
-      saveDir: "/data/usergen/",
+      saveFile: "/data/usergen/saved_birds.json",
+      saveUrl: "/save",
       resultLimit: 100
     };
     this.opt = _.extend({}, defaults, config);
@@ -26,11 +27,16 @@ var AppQueryPhrases = (function() {
     this.$resultCount = $("#result-count");
     this.$results = $("#results");
 
+    this.data = [];
+    this.savedData = [];
+    this.saveDataQueue = [];
+
     var _this = this;
     var dataPromise = this.loadData(this.opt.dataFile);
+    var savedDataPromise = this.loadSavedData(this.opt.saveFile);
     this.ranges = {};
 
-    $.when.apply($, [dataPromise]).then(function(){
+    $.when.apply($, [dataPromise, savedDataPromise]).then(function(){
       _this.onReady();
       _this.loadListeners();
     });
@@ -84,6 +90,30 @@ var AppQueryPhrases = (function() {
       var entry = _this.data[parseInt($(this).attr("data-index"))];
       _this.play(entry, shifted);
     });
+
+    this.$results.on("click", ".save-button", function(e){
+      var $el = $(this);
+      var entry = _this.data[parseInt($el.attr("data-index"))];
+      _this.save($el, entry);
+    });
+  };
+
+  AppQueryPhrases.prototype.loadSavedData = function(jsonFilename){
+    var _this = this;
+    var deferred = $.Deferred();
+
+    $.getJSON(jsonFilename, function(data) {
+      _this.savedData = data;
+      console.log("Found "+data.length+" saved entries");
+      deferred.resolve();
+      
+    }).fail(function() {
+      _this.savedData = [];
+      console.log("No saved data found");
+      deferred.resolve();
+    });
+
+    return deferred.promise();
   };
 
   AppQueryPhrases.prototype.loadSlider = function($slider){
@@ -202,6 +232,7 @@ var AppQueryPhrases = (function() {
     }
 
     var htmlString = "";
+    var savedData = this.savedData;
 
     // parent,start,dur,count,hzMean,durMean,powMean,hzStd,beatStd,notes
     _.each(results, function(r, i){
@@ -216,12 +247,71 @@ var AppQueryPhrases = (function() {
         row += '<td>'+r.hzStd+'</td>';
         row += '<td>'+r.beatStd+'</td>';
         row += '<td><button class="play-button" data-index="'+r.index+'">play</button></td>';
-        row += '<td><button class="save-button" data-index="'+r.index+'">save</button></td>';
+        var text = "save";
+        var className = "";
+        if (savedData.indexOf(r.parent) >= 0) {
+          text = "saved";
+          className = " saved";
+        }
+        row += '<td><button class="save-button'+className+'" data-index="'+r.index+'" data-parent="'+r.parent+'">'+text+'</button></td>';
       row += '</tr>';
       htmlString += row;
     });
 
     this.$results.html(htmlString);
+  };
+
+  AppQueryPhrases.prototype.save = function($el, entry){
+    var parent = entry.parent;
+    var index = this.savedData.indexOf(parent);
+    var wasSaved = (index >= 0);
+    var $buttons = $('.save-button[data-parent="'+parent+'"]');
+
+    if (wasSaved) {
+      this.savedData = this.savedData.splice(index, 1);
+      $buttons.text('save').removeClass('saved');
+    } else {
+      this.savedData.push(entry.parent);
+      $buttons.text('saved').addClass('saved');
+    }
+
+
+
+    this.saveData();
+  };
+
+  AppQueryPhrases.prototype.saveData = function(){
+    var filename = this.opt.saveFile;
+    var data = this.savedData.slice(0);
+
+    this.saveDataQueue.push({
+      filename: filename,
+      data: data
+    });
+
+    this.saveQueue();
+  };
+
+  AppQueryPhrases.prototype.saveQueue = function(){
+    if (this.isSaving || !this.saveDataQueue.length) return false;
+    var _this = this;
+
+    this.isSaving = true;
+    var nextData = this.saveDataQueue.shift();
+    var url = this.opt.saveUrl;
+
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: JSON.stringify(nextData),
+      contentType: 'application/json',
+      complete: function(jqXHR, textStatus){
+        _this.isSaving = false;
+        _this.saveQueue();
+      },
+      success: function(){ console.log('Data saved'); },
+      error: function(){ console.log('Error with saving data'); }
+    });
   };
 
   return AppQueryPhrases;

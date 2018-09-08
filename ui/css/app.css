@@ -25,6 +25,13 @@ td {
 tr:hover {
   background: #f7ea8c;
 }
+button {
+  border: 1px solid #aaa;
+}
+button.saved {
+  background: #b4e896;
+}
+
 .ui-slider {
   width: 80%;
   height: 0.5rem;
