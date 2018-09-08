@@ -7,6 +7,7 @@ var AppQueryPhrases = (function() {
       dataFile: "/data/output/birds_audio_phrase_stats_query.csv",
       audioDir: "/audio/downloads/birds/",
       audioExt: ".mp3",
+      saveDir: "/data/usergen/",
       resultLimit: 100
     };
     this.opt = _.extend({}, defaults, config);
@@ -23,6 +24,7 @@ var AppQueryPhrases = (function() {
   AppQueryPhrases.prototype.init = function(){
     this.$el = $("#app");
     this.$resultCount = $("#result-count");
+    this.$results = $("#results");
 
     var _this = this;
     var dataPromise = this.loadData(this.opt.dataFile);
@@ -68,9 +70,19 @@ var AppQueryPhrases = (function() {
 
   AppQueryPhrases.prototype.loadListeners = function(){
     var _this = this;
+    var shifted = false;
+
+    $(document).on('keyup keydown', function(e){
+      shifted = e.shiftKey}
+    );
 
     $('input[type="checkbox"], input[type="radio"]').on("change", function(e){
       _this.query();
+    });
+
+    this.$results.on("click", ".play-button", function(e){
+      var entry = _this.data[parseInt($(this).attr("data-index"))];
+      _this.play(entry, shifted);
     });
   };
 
@@ -128,22 +140,24 @@ var AppQueryPhrases = (function() {
     });
   };
 
-  AppQueryPhrases.prototype.play = function(entry){
+  AppQueryPhrases.prototype.play = function(entry, playFull){
+    var spriteKey = playFull ? "full" : "phrase";
     if (entry.index !== this.soundIndex) {
       if (this.sound) this.sound.unload();
       var sound = new Howl({
         src: entry.audioFile,
         sprite: {
-          "phrase": [entry.start, entry.dur]
+          "phrase": [entry.start, entry.dur],
+          "full": [0, 60000]
         }
       });
       sound.once('load', function(){
-        sound.play("phrase");
+        sound.play(spriteKey);
       });
       this.sound = sound;
 
     } else if (this.sound && this.sound.state()==="loaded") {
-      this.sound.play("phrase");
+      this.sound.play(spriteKey);
     }
     this.soundIndex = entry.index;
   };
@@ -186,6 +200,28 @@ var AppQueryPhrases = (function() {
     if (results.length > resultLimit) {
       results = results.slice(0, resultLimit);
     }
+
+    var htmlString = "";
+
+    // parent,start,dur,count,hzMean,durMean,powMean,hzStd,beatStd,notes
+    _.each(results, function(r, i){
+      var row = '<tr>';
+        row += '<td>'+(i+1)+'.</td>';
+        row += '<td>'+r.parent+'</td>';
+        row += '<td>'+r.dur+'</td>';
+        row += '<td>'+r.count+'</td>';
+        row += '<td>'+r.hzMean+'</td>';
+        row += '<td>'+r.durMean+'</td>';
+        row += '<td>'+r.powMean+'</td>';
+        row += '<td>'+r.hzStd+'</td>';
+        row += '<td>'+r.beatStd+'</td>';
+        row += '<td><button class="play-button" data-index="'+r.index+'">play</button></td>';
+        row += '<td><button class="save-button" data-index="'+r.index+'">save</button></td>';
+      row += '</tr>';
+      htmlString += row;
+    });
+
+    this.$results.html(htmlString);
   };
 
   return AppQueryPhrases;

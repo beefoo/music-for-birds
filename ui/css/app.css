@@ -11,6 +11,20 @@ input[readonly] {
   border: none;
   text-indent: 0.2rem;
 }
+table {
+    border-collapse: collapse;
+}
+table, th, td {
+  border: 1px solid #ccc;
+  margin: 0;
+  padding: 0;
+}
+td {
+  padding: 0 0.2rem;
+}
+tr:hover {
+  background: #f7ea8c;
+}
 .ui-slider {
   width: 80%;
   height: 0.5rem;
