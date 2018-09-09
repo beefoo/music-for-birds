@@ -46,6 +46,7 @@ var AppQueryPhrases = (function() {
     this.sortBy = $('input[name="select-sort"]:checked').val();
     this.sortDirection = parseInt($('input[name="select-direction"]:checked').val());
     this.filterSaved = $('input[name="select-saved"]:checked').val();
+    this.keyword = $('#input-keyword').val().toLowerCase();
     this.notes = $('input[name="select-notes"]:checked').map(function(){
       return $(this).val();
     });
@@ -83,7 +84,7 @@ var AppQueryPhrases = (function() {
       shifted = e.shiftKey}
     );
 
-    $('input[type="checkbox"], input[type="radio"]').on("change", function(e){
+    $('input[type="checkbox"], input[type="radio"], #input-keyword').on("change", function(e){
       _this.query();
     });
 
@@ -170,6 +171,7 @@ var AppQueryPhrases = (function() {
     var audioExt = this.opt.audioExt;
     return _.map(data, function(entry, i){
       entry.audioFile = audioDir + entry.parent + audioExt;
+      entry.keywords = entry.parent.toLowerCase();
       entry.index = i;
       return entry;
     });
@@ -205,6 +207,7 @@ var AppQueryPhrases = (function() {
     var filterSaved = this.filterSaved;
     var notes = this.notes;
     var ranges = this.ranges;
+    var keyword = this.keyword;
     // console.log(sortBy, sortDirection, notes.length, ranges);
 
     var results = _.filter(this.data, function(d){
@@ -215,8 +218,11 @@ var AppQueryPhrases = (function() {
         });
         valid = valid ? true : false;
       }
-      if (filterSaved !== "all") {
+      if (valid && filterSaved !== "all") {
         valid = (d.saved && filterSaved==="saved" || !d.saved && filterSaved==="unsaved");
+      }
+      if (valid && keyword.length) {
+        valid = d.keywords.indexOf(keyword) >= 0;
       }
       if (valid) {
         valid = _.every(ranges, function(values, key){
