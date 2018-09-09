@@ -204,9 +204,10 @@ var AppQueryPhrases = (function() {
     var results = _.filter(this.data, function(d){
       var valid = true;
       if (notes.length) {
-        valid = _.every(notes, function(note){
+        valid = _.find(notes, function(note){
           return d.notes.includes(note);
         });
+        valid = valid ? true : false;
       }
       if (valid) {
         valid = _.every(ranges, function(values, key){

@@ -6,6 +6,14 @@ form > fieldset {
   display: block;
   margin-top: 1rem;
 }
+fieldset label,
+fieldset input {
+  display: inline-block;
+}
+fieldset label {
+  margin-right: 1rem;
+  white-space: nowrap;
+}
 input[readonly] {
   width: 5rem;
   border: none;
