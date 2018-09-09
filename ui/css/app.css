@@ -36,7 +36,8 @@ tr:hover {
 button {
   border: 1px solid #aaa;
 }
-button.saved {
+button.saved,
+button.played {
   background: #b4e896;
 }
 

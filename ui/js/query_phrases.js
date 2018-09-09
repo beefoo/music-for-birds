@@ -140,7 +140,6 @@ var AppQueryPhrases = (function() {
         _this.onSlide(ui.values[0], ui.values[1], key, $target);
       }
     });
-
   };
 
   AppQueryPhrases.prototype.loadUi = function(){
@@ -197,6 +196,8 @@ var AppQueryPhrases = (function() {
       this.sound.play(spriteKey);
     }
     this.soundIndex = entry.index;
+    // update ui
+    $('.play-button[data-parent="'+entry.parent+'"]').addClass('played');
   };
 
   AppQueryPhrases.prototype.query = function(){
@@ -261,7 +262,7 @@ var AppQueryPhrases = (function() {
         row += '<td>'+r.powMean+'</td>';
         row += '<td>'+r.hzStd+'</td>';
         row += '<td>'+r.beatStd+'</td>';
-        row += '<td><button class="play-button" data-index="'+r.index+'">play</button></td>';
+        row += '<td><button class="play-button" data-index="'+r.index+'" data-parent="'+r.parent+'">play</button></td>';
         var text = "save";
         var className = "";
         if (r.saved) {
