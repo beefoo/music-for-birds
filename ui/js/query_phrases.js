@@ -45,6 +45,7 @@ var AppQueryPhrases = (function() {
   AppQueryPhrases.prototype.getSelectValues = function(){
     this.sortBy = $('input[name="select-sort"]:checked').val();
     this.sortDirection = parseInt($('input[name="select-direction"]:checked').val());
+    this.filterSaved = $('input[name="select-saved"]:checked').val();
     this.notes = $('input[name="select-notes"]:checked').map(function(){
       return $(this).val();
     });
@@ -150,6 +151,10 @@ var AppQueryPhrases = (function() {
   };
 
   AppQueryPhrases.prototype.onReady = function(){
+    var savedData = this.savedData;
+    _.each(this.data, function(entry, i){
+      entry.saved = (savedData.indexOf(entry.parent) >= 0);
+    })
     this.loadUi();
     this.query();
   };
@@ -197,6 +202,7 @@ var AppQueryPhrases = (function() {
 
     var sortBy = this.sortBy;
     var sortDirection = this.sortDirection;
+    var filterSaved = this.filterSaved;
     var notes = this.notes;
     var ranges = this.ranges;
     // console.log(sortBy, sortDirection, notes.length, ranges);
@@ -208,6 +214,9 @@ var AppQueryPhrases = (function() {
           return d.notes.includes(note);
         });
         valid = valid ? true : false;
+      }
+      if (filterSaved !== "all") {
+        valid = (d.saved && filterSaved==="saved" || !d.saved && filterSaved==="unsaved");
       }
       if (valid) {
         valid = _.every(ranges, function(values, key){
@@ -233,7 +242,6 @@ var AppQueryPhrases = (function() {
     }
 
     var htmlString = "";
-    var savedData = this.savedData;
 
     // parent,start,dur,count,hzMean,durMean,powMean,hzStd,beatStd,notes
     _.each(results, function(r, i){
@@ -250,7 +258,7 @@ var AppQueryPhrases = (function() {
         row += '<td><button class="play-button" data-index="'+r.index+'">play</button></td>';
         var text = "save";
         var className = "";
-        if (savedData.indexOf(r.parent) >= 0) {
+        if (r.saved) {
           text = "saved";
           className = " saved";
         }
@@ -267,13 +275,16 @@ var AppQueryPhrases = (function() {
     var index = this.savedData.indexOf(parent);
     var wasSaved = (index >= 0);
     var $buttons = $('.save-button[data-parent="'+parent+'"]');
+    var entries = _.filter(this.data, function(d){ return d.parent===parent; })
 
     if (wasSaved) {
       this.savedData.splice(index, 1);
       $buttons.text('save').removeClass('saved');
+      _.each(entries, function(entry, i){ entry.saved = false; });
     } else {
       this.savedData.push(entry.parent);
       $buttons.text('saved').addClass('saved');
+      _.each(entries, function(entry, i){ entry.saved = true; });
     }
 
     this.saveData();
