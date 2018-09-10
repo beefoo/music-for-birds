@@ -1,0 +1,15 @@
+
+.editor,
+.toolbar {
+  width: 100%;
+  box-sizing: border-box;
+}
+.editor {
+  height: calc(100vh - 60px);
+  background: black;
+}
+.toolbar {
+  height: 60px;
+  line-height: 60px;
+  padding: 0 1rem;
+}

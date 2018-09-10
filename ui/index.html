@@ -9,17 +9,27 @@
 
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/app.css">
-  <link rel="stylesheet" href="css/browse.css">
+  <style type="text/css">
+  a {
+    color: black;
+  }
+  li {
+    margin: 0;
+    padding: 1rem 0;
+    font-size: 1.2rem;
+  }
+  </style>
 </head>
 
 <body>
-  <div id="app" class="app"></div>
-
-  <script src="js/vendor/jquery-3.3.1.min.js"></script>
-  <script src="js/vendor/underscore-min.js"></script>
-  <script src="js/vendor/howler.min.js"></script>
-  <script src="js/vendor/papaparse.min.js"></script>
-  <script src="js/browse_phrases.js"></script>
+  <div class="container">
+    <h1>Table of contents</h1>
+    <ol>
+      <li><a href="browse_phrases.html">Browse phrases</a></li>
+      <li><a href="query_phrases.html">Query phrases</a></li>
+      <li><a href="edit_phrases.html">Edit phrases</a></li>
+    </ol>
+  </div>
 </body>
 
 </html>

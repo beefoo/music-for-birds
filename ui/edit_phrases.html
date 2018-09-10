@@ -9,17 +9,25 @@
 
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/app.css">
-  <link rel="stylesheet" href="css/browse.css">
+  <link rel="stylesheet" href="css/edit.css">
 </head>
 
 <body>
-  <div id="app" class="app"></div>
+  <div id="app" class="app">
+    <div id="editor" class="editor">
+      <canvas id="spectrogram" class="spectrogram"></canvas>
+    </div>
+    <div class="toolbar">
+      <label for="select-audio">Select audio</label>
+      <select id="select-audio" name="select-audio"></select>
+    </div>
+  </div>
 
   <script src="js/vendor/jquery-3.3.1.min.js"></script>
   <script src="js/vendor/underscore-min.js"></script>
   <script src="js/vendor/howler.min.js"></script>
   <script src="js/vendor/papaparse.min.js"></script>
-  <script src="js/browse_phrases.js"></script>
+  <script src="js/edit_phrases.js"></script>
 </body>
 
 </html>

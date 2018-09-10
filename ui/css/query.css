@@ -1,0 +1,77 @@
+form > fieldset {
+  display: block;
+  margin-top: 1rem;
+}
+fieldset label,
+fieldset input {
+  display: inline-block;
+}
+fieldset label {
+  margin-right: 1rem;
+  white-space: nowrap;
+}
+input[readonly] {
+  width: 5rem;
+  border: none;
+  text-indent: 0.2rem;
+}
+table {
+    border-collapse: collapse;
+}
+table, th, td {
+  border: 1px solid #ccc;
+  margin: 0;
+  padding: 0;
+}
+td {
+  padding: 0 0.2rem;
+}
+tr:hover {
+  background: #f7ea8c;
+}
+button {
+  border: 1px solid #aaa;
+}
+button.saved,
+button.played {
+  background: #b4e896;
+}
+
+.ui-slider {
+  width: 80%;
+  height: 0.5rem;
+  background: #999;
+  margin: 1rem 0 2rem 0.5rem;
+  position: relative;
+}
+.ui-slider-handle {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  margin-left: -0.5rem;
+  top: -0.25rem;
+  background: #666;
+  cursor: ew-resize;
+}
+
+.panel {
+  position: relative;
+  width: 50%;
+  height: auto;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem;
+  float: left;
+}
+.panel:last-child {
+  float: right;
+}
+.query-panel {
+  width: 33%;
+  background: #ddd;
+  border-right: 1px solid #bbb;
+  padding-top: 1rem;
+}
+.results-panel {
+  width: 67%;
+}
