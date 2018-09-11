@@ -24,7 +24,7 @@ var AppEditPhrases = (function() {
 
   AppEditPhrases.prototype.init = function(){
     this.$el = $("#app");
-    this.$editor = $("#editor");
+    this.$wrapper = $("#spectrogram-wrapper");
     this.$spectrogram = $("#spectrogram");
     this.$select = $("#select-audio");
 
@@ -73,7 +73,7 @@ var AppEditPhrases = (function() {
   AppEditPhrases.prototype.loadListeners = function(){
     var _this = this;
 
-    this.$select.on("change", function(e){});
+    this.$select.on("change", function(e){ _this.onSelect(); });
 
     $(window).on("resize", function(e){ _this.onResize(); })
   };
@@ -105,13 +105,33 @@ var AppEditPhrases = (function() {
   AppEditPhrases.prototype.onReady = function(){
     this.loadUi();
     this.onResize();
+    this.onSelect();
   };
 
   AppEditPhrases.prototype.onResize = function(){
-    var w = this.$editor.width();
-    var h = this.$editor.height();
+    var w = this.$wrapper.width();
+    var h = this.$wrapper.height();
     this.$spectrogram.width(w);
     this.$spectrogram.height(h);
+  };
+
+  AppEditPhrases.prototype.onSelect = function(){
+    var _this = this;
+    var parent = this.savedData[parseInt(this.$select.val())];
+    var filename = this.opt.audioDir + parent + this.opt.audioExt;
+    var phrases = _.where(this.data, {parent: parent});
+    var sprites = _.object(_.map(phrases, function(p, i){ return [""+i, [p.start, p.dur]]; }))
+
+    var sound = this.sound;
+    if (sound) sound.unload();
+    var sound = new Howl({
+      src: filename,
+      sprite: sprites,
+      onload: function(){
+        _this.renderAudio(this);
+        _this.renderPhrases(this, phrases);
+      }
+    });
   };
 
   AppEditPhrases.prototype.parseData = function(data){
@@ -122,6 +142,14 @@ var AppEditPhrases = (function() {
       entry.index = i;
       return entry;
     });
+  };
+
+  AppEditPhrases.prototype.renderAudio = function(sound) {
+
+  };
+
+  AppEditPhrases.prototype.renderPhrases = function(sound, phrases) {
+    console.log(sound.duration() * 1000)
   };
 
   AppEditPhrases.prototype.saveData = function(){
