@@ -15,6 +15,35 @@ var AppEditPhrases = (function() {
     this.init();
   }
 
+  function loadCsvData(csvFilename){
+    var deferred = $.Deferred();
+    Papa.parse(csvFilename, {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        if (results.errors.length) console.log(results.errors[0].message);
+        console.log("Found "+results.data.length+" rows in "+csvFilename);
+        deferred.resolve(results.data);
+      }
+    });
+    return deferred.promise();
+  }
+
+  function loadJsonData(jsonFilename){
+    var _this = this;
+    var deferred = $.Deferred();
+    $.getJSON(jsonFilename, function(data) {
+      console.log("Found "+data.length+" entries in "+jsonFilename);
+      deferred.resolve(data);
+    }).fail(function() {
+      console.log("No data found in "+jsonFilename);
+      deferred.resolve([]);
+    });
+    return deferred.promise();
+  }
+
   function parseNumber(str){
     var isNum = /^[\d\.]+$/.test(str);
     if (isNum && str.indexOf(".") >= 0) return parseFloat(str);
@@ -34,40 +63,17 @@ var AppEditPhrases = (function() {
     this.saveDataQueue = [];
 
     var _this = this;
-    var dataPromise = this.loadData(this.opt.dataFile);
-    var savedDataPromise = this.loadSavedData(this.opt.savedFile);
-    var editedDataPromise = this.loadSavedData(this.opt.saveFile);
+    var dataPromise = loadCsvData(this.opt.dataFile);
+    var savedDataPromise = loadJsonData(this.opt.savedFile);
+    var editedDataPromise = loadJsonData(this.opt.saveFile);
 
     $.when.apply($, [dataPromise, savedDataPromise, editedDataPromise]).then(function(data, savedData, editedData){
-      _this.data = data;
+      _this.data = _this.parseData(data);
       _this.savedData = savedData;
-      _this.editedData = editedData;
-      console.log(data.length, savedData.length, editedData.length);
+      _this.editedData = editedData.length ? editedData : {};
       _this.onReady();
       _this.loadListeners();
     });
-  };
-
-  AppEditPhrases.prototype.loadData = function(csvFilename){
-    var _this = this;
-    var deferred = $.Deferred();
-
-    Papa.parse(csvFilename, {
-      download: true,
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        if (results.errors.length) {
-          console.log(results.errors[0].message);
-        }
-        console.log("Found "+results.data.length+" rows");
-        var data = _this.parseData(results.data);
-        deferred.resolve(data);
-      }
-    });
-
-    return deferred.promise();
   };
 
   AppEditPhrases.prototype.loadListeners = function(){
@@ -76,22 +82,6 @@ var AppEditPhrases = (function() {
     this.$select.on("change", function(e){ _this.onSelect(); });
 
     $(window).on("resize", function(e){ _this.onResize(); })
-  };
-
-  AppEditPhrases.prototype.loadSavedData = function(jsonFilename){
-    var _this = this;
-    var deferred = $.Deferred();
-
-    $.getJSON(jsonFilename, function(data) {
-      console.log("Found "+data.length+" saved entries");
-      deferred.resolve(data);
-
-    }).fail(function() {
-      console.log("No saved data found");
-      deferred.resolve([]);
-    });
-
-    return deferred.promise();
   };
 
   AppEditPhrases.prototype.loadUi = function(){
