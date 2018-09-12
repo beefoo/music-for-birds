@@ -51,11 +51,26 @@ var AppEditPhrases = (function() {
     else return str;
   }
 
+  function pxToPercent($el) {
+    var parentW = $el.parent().width();
+    var x = $el.position().left / parentW;
+    var w = $el.width() / parentW;
+    $el.css({
+      left: (x * 100) + '%',
+      width: (w * 100) + '%'
+    });
+    return {
+      x: x,
+      w: w
+    }
+  }
+
   AppEditPhrases.prototype.init = function(){
     this.$el = $("#app");
     this.$wrapper = $("#spectrogram-wrapper");
     this.$spectrogram = $("#spectrogram");
     this.$select = $("#select-audio");
+    this.$phrases = $("#phrases");
 
     this.data = [];
     this.savedData = [];
@@ -139,7 +154,39 @@ var AppEditPhrases = (function() {
   };
 
   AppEditPhrases.prototype.renderPhrases = function(sound, phrases) {
-    console.log(sound.duration() * 1000)
+    var _this = this;
+    var dur = sound.duration() * 1000;
+    var $phrases = this.$phrases;
+
+    $phrases.empty();
+    var $container = $('<div></div>');
+    _.each(phrases, function(p){
+      var $phrase = $('<div class="phrase"></div>');
+      var w = p.dur / dur * 100;
+      var x = p.start / dur * 100;
+      $phrase.css({
+        width: w + "%",
+        left: x + "%"
+      });
+      $container.append($phrase);
+    });
+    $phrases.append($container);
+    $('.phrase').draggable({
+      axis: "x",
+      containment: "parent",
+      stop: function(e, ui) {
+        var dim = pxToPercent($(this));
+      }
+    }).resizable({
+      containment: "parent",
+      handles: "e, w",
+      resize: function(e, ui) {
+        $(this).css('height', '100%');
+      },
+      stop: function(e, ui) {
+        var dim = pxToPercent($(this));
+      }
+    });
   };
 
   AppEditPhrases.prototype.saveData = function(){
