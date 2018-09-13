@@ -14,9 +14,9 @@
 
 <body>
   <div id="app" class="app">
-    <div class="editor">
+    <div id="editor" class="editor">
       <div id="spectrogram-wrapper" class="spectrogram-wrapper">
-        <canvas id="spectrogram" class="spectrogram"></canvas>
+        <div id="spectrogram" class="spectrogram"></div>
         <div id="phrases" class="phrases"></div>
       </div>
     </div>
@@ -27,6 +27,7 @@
   </div>
 
   <script src="js/vendor/jquery-3.3.1.min.js"></script>
+  <script src="js/vendor/jquery.mousewheel.min.js"></script>
   <script src="js/vendor/jquery-ui.drag.resize.min.js"></script>
   <script src="js/vendor/underscore-min.js"></script>
   <script src="js/vendor/howler.min.js"></script>

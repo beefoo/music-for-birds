@@ -7,9 +7,13 @@ var AppEditPhrases = (function() {
       dataFile: "/data/output/birds_audio_phrase_stats_query.csv",
       audioDir: "/audio/downloads/birds/",
       audioExt: ".mp3",
+      imageDir: "/data/output/images/",
+      imageExt: ".png",
       savedFile: "/data/usergen/saved_birds.json",
       saveFile: "/data/usergen/edited_birds.json",
-      saveUrl: "/save"
+      saveUrl: "/save",
+      zoomStep: 10,
+      zoomRange: [100, 500]
     };
     this.opt = _.extend({}, defaults, config);
     this.init();
@@ -67,6 +71,7 @@ var AppEditPhrases = (function() {
 
   AppEditPhrases.prototype.init = function(){
     this.$el = $("#app");
+    this.$editor = $("#editor");
     this.$wrapper = $("#spectrogram-wrapper");
     this.$spectrogram = $("#spectrogram");
     this.$select = $("#select-audio");
@@ -76,6 +81,7 @@ var AppEditPhrases = (function() {
     this.savedData = [];
     this.editedData = {};
     this.saveDataQueue = [];
+    this.zoom = 100;
 
     var _this = this;
     var dataPromise = loadCsvData(this.opt.dataFile);
@@ -96,7 +102,11 @@ var AppEditPhrases = (function() {
 
     this.$select.on("change", function(e){ _this.onSelect(); });
 
-    $(window).on("resize", function(e){ _this.onResize(); })
+    $(window).on("resize", function(e){ _this.onResize(); });
+
+    this.$wrapper.on('mousewheel', function(e) {
+      _this.onZoom(e.deltaY, e.pageX);
+    });
   };
 
   AppEditPhrases.prototype.loadUi = function(){
@@ -114,10 +124,8 @@ var AppEditPhrases = (function() {
   };
 
   AppEditPhrases.prototype.onResize = function(){
-    var w = this.$wrapper.width();
-    var h = this.$wrapper.height();
-    this.$spectrogram.width(w);
-    this.$spectrogram.height(h);
+    this.elOffset = this.$el.offset();
+    this.elWidth = this.$el.width();
   };
 
   AppEditPhrases.prototype.onSelect = function(){
@@ -127,30 +135,60 @@ var AppEditPhrases = (function() {
     var phrases = _.where(this.data, {parent: parent});
     var sprites = _.object(_.map(phrases, function(p, i){ return [""+i, [p.start, p.dur]]; }))
 
+    this.renderSpectrogram(this.opt.imageDir + parent + this.opt.imageExt);
+
     var sound = this.sound;
     if (sound) sound.unload();
     var sound = new Howl({
       src: filename,
       sprite: sprites,
       onload: function(){
-        _this.renderAudio(this);
         _this.renderPhrases(this, phrases);
       }
     });
   };
 
+  AppEditPhrases.prototype.onZoom = function(delta, mouseX){
+    var zoomStep = this.opt.zoomStep;
+    var zoomRange = this.opt.zoomRange;
+
+    var zoom = this.zoom + delta * zoomStep;
+    if (zoom < zoomRange[0]) zoom = zoomRange[0];
+    else if (zoom > zoomRange[1]) zoom = zoomRange[1];
+
+
+    var $wrapper = this.$wrapper;
+    var wrapperOffset = $wrapper.offset();
+    var wrapperWidth = $wrapper.width();
+
+    var appX = this.elOffset.left;
+    var appWidth = this.elWidth;
+    var wrapperX = wrapperOffset.left;
+    var anchorPos = (mouseX - wrapperX + appX) / wrapperWidth;
+    var anchorX = mouseX + appX;
+    var newWidth = appWidth * (zoom/100.0);
+    var scrollLeft = (anchorPos * newWidth - anchorX);
+
+    if (scrollLeft < 0) scrollLeft = 0;
+    if (scrollLeft > newWidth-appWidth) scrollLeft = newWidth-appWidth;
+
+    this.$wrapper.css("width", zoom + "%");
+    this.$editor.scrollLeft(scrollLeft);
+
+    this.zoom = zoom;
+  };
+
   AppEditPhrases.prototype.parseData = function(data){
     var audioDir = this.opt.audioDir;
     var audioExt = this.opt.audioExt;
+    var imageDir = this.opt.imageDir;
+    var imageExt = this.opt.imageExt;
     return _.map(data, function(entry, i){
       entry.audioFile = audioDir + entry.parent + audioExt;
+      entry.imageFile = imageDir + entry.parent + imageExt;
       entry.index = i;
       return entry;
     });
-  };
-
-  AppEditPhrases.prototype.renderAudio = function(sound) {
-
   };
 
   AppEditPhrases.prototype.renderPhrases = function(sound, phrases) {
@@ -187,6 +225,12 @@ var AppEditPhrases = (function() {
         var dim = pxToPercent($(this));
       }
     });
+  };
+
+  AppEditPhrases.prototype.renderSpectrogram = function(filename) {
+    var $spectrogram = this.$spectrogram;
+    $spectrogram.empty();
+    $spectrogram.append($('<image src="'+filename+'" />'))
   };
 
   AppEditPhrases.prototype.saveData = function(){
