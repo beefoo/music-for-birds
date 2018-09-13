@@ -121,6 +121,21 @@ var AppEditPhrases = (function() {
     });
   };
 
+  AppEditPhrases.prototype.onEditPhrase = function(){
+    var containerW = this.$phrases.width();
+    var audioDuration = this.currentAudioDuration;
+    var phrases = $(".phrase").map(function(){
+      var $el = $(this);
+      var start =  parseInt($el.position().left / containerW * audioDuration);
+      var dur = parseInt($el.width() / containerW * audioDuration);
+      return {
+        "start": start,
+        "dur": dur
+      };
+    }).get();
+    console.log(phrases);
+  };
+
   AppEditPhrases.prototype.onReady = function(){
     this.loadUi();
     this.onResize();
@@ -148,6 +163,7 @@ var AppEditPhrases = (function() {
       src: filename,
       sprite: sprites,
       onload: function(){
+        _this.currentAudioDuration = this.duration() * 1000;
         _this.renderPhrases(this, phrases);
       }
     });
@@ -232,6 +248,7 @@ var AppEditPhrases = (function() {
       },
       stop: function(e, ui) {
         var dim = pxToPercent($(this));
+        _this.onEditPhrase();
       }
     }).resizable({
       containment: "parent",
@@ -244,6 +261,7 @@ var AppEditPhrases = (function() {
       },
       stop: function(e, ui) {
         var dim = pxToPercent($(this));
+        _this.onEditPhrase();
       }
     });
   };
