@@ -43,9 +43,10 @@
   height: 100%;
   top: 0;
   background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
 }
 .phrase.selected {
-  background: rgba(0, 255, 0, 0.3);
+  background: rgba(255, 255, 255, 0.2);
 }
 .ui-resizable-handle {
   position: absolute;
@@ -54,9 +55,12 @@
   top: 0;
   cursor: ew-resize;
 }
+.phrase.selected .ui-resizable-handle {
+  background: rgba(255, 255, 255, 0.5);
+}
 .ui-resizable-e {
-  right: -2px;
+  right: -6px;
 }
 .ui-resizable-w {
-  left: -2px;
+  left: -6px;
 }

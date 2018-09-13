@@ -107,6 +107,10 @@ var AppEditPhrases = (function() {
     this.$wrapper.on('mousewheel', function(e) {
       _this.onZoom(e.deltaY, e.pageX);
     });
+
+    this.$phrases.on("mousedown", ".phrase", function(e){
+      _this.onSelectPhrase($(this));
+    });
   };
 
   AppEditPhrases.prototype.loadUi = function(){
@@ -130,7 +134,8 @@ var AppEditPhrases = (function() {
 
   AppEditPhrases.prototype.onSelect = function(){
     var _this = this;
-    var parent = this.savedData[parseInt(this.$select.val())];
+    var index = parseInt(this.$select.val())
+    var parent = this.savedData[index];
     var filename = this.opt.audioDir + parent + this.opt.audioExt;
     var phrases = _.where(this.data, {parent: parent});
     var sprites = _.object(_.map(phrases, function(p, i){ return [""+i, [p.start, p.dur]]; }))
@@ -146,6 +151,16 @@ var AppEditPhrases = (function() {
         _this.renderPhrases(this, phrases);
       }
     });
+
+    this.currentPhraseIndex = false;
+    this.currentIndex = index;
+    this.currentPhrases = phrases;
+  };
+
+  AppEditPhrases.prototype.onSelectPhrase = function($phrase){
+    $(".phrase").removeClass("selected");
+    $phrase.addClass("selected");
+    this.currentPhraseIndex = parseInt($phrase.attr("data-index"));
   };
 
   AppEditPhrases.prototype.onZoom = function(delta, mouseX){
@@ -198,8 +213,8 @@ var AppEditPhrases = (function() {
 
     $phrases.empty();
     var $container = $('<div></div>');
-    _.each(phrases, function(p){
-      var $phrase = $('<div class="phrase"></div>');
+    _.each(phrases, function(p, i){
+      var $phrase = $('<div class="phrase" data-index="'+i+'"></div>');
       var w = p.dur / dur * 100;
       var x = p.start / dur * 100;
       $phrase.css({
@@ -212,12 +227,18 @@ var AppEditPhrases = (function() {
     $('.phrase').draggable({
       axis: "x",
       containment: "parent",
+      start: function(e, ui) {
+        _this.onSelectPhrase($(this));
+      },
       stop: function(e, ui) {
         var dim = pxToPercent($(this));
       }
     }).resizable({
       containment: "parent",
       handles: "e, w",
+      start: function(e, ui) {
+        _this.onSelectPhrase($(this));
+      },
       resize: function(e, ui) {
         $(this).css('height', '100%');
       },
