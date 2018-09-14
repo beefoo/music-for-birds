@@ -48,6 +48,15 @@
 .phrase.selected {
   background: rgba(255, 255, 255, 0.2);
 }
+.phrase.selected .progress {
+  width: 6px;
+  height: 100%;
+  position: absolute;
+  margin-left: -3px;
+  top: 0;
+  left: 0;
+  background: rgba(0, 255, 0, 0.5);
+}
 .ui-resizable-handle {
   position: absolute;
   width: 6px;

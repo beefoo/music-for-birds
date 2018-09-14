@@ -48,6 +48,15 @@ var AppEditPhrases = (function() {
     return deferred.promise();
   }
 
+  function norm(value, a, b){
+    var denom = (b - a);
+    if (denom > 0 || denom < 0) {
+      return (1.0 * value - a) / denom;
+    } else {
+      return 0;
+    }
+  }
+
   function parseNumber(str){
     var isNum = /^[\d\.]+$/.test(str);
     if (isNum && str.indexOf(".") >= 0) return parseFloat(str);
@@ -108,9 +117,32 @@ var AppEditPhrases = (function() {
       _this.onZoom(e.deltaY, e.pageX);
     });
 
+    $(document).on("keypress", function(e){
+      var key = String.fromCharCode(e.which);
+      switch(key) {
+        case " ":
+          _this.playCurrent();
+          break;
+      }
+    })
+
     this.$phrases.on("mousedown", ".phrase", function(e){
       _this.onSelectPhrase($(this));
     });
+  };
+
+  AppEditPhrases.prototype.loadSound = function(filename, phrases, callback){
+    var _this = this;
+    var sprites = _.object(_.map(phrases, function(p, i){ return [""+i, [p.start, p.dur]]; }));
+    var sound = this.sound;
+    if (sound) sound.unload();
+    var sound = new Howl({
+      src: filename,
+      sprite: sprites,
+      onload: function(){ if (callback) { callback(this); } },
+      onend: function(){ _this.progressing = false; }
+    });
+    this.sound = sound;
   };
 
   AppEditPhrases.prototype.loadUi = function(){
@@ -133,7 +165,8 @@ var AppEditPhrases = (function() {
         "dur": dur
       };
     }).get();
-    console.log(phrases);
+
+    this.loadSound(this.currentFilename, phrases);
   };
 
   AppEditPhrases.prototype.onReady = function(){
@@ -153,30 +186,26 @@ var AppEditPhrases = (function() {
     var parent = this.savedData[index];
     var filename = this.opt.audioDir + parent + this.opt.audioExt;
     var phrases = _.where(this.data, {parent: parent});
-    var sprites = _.object(_.map(phrases, function(p, i){ return [""+i, [p.start, p.dur]]; }))
-
     this.renderSpectrogram(this.opt.imageDir + parent + this.opt.imageExt);
 
-    var sound = this.sound;
-    if (sound) sound.unload();
-    var sound = new Howl({
-      src: filename,
-      sprite: sprites,
-      onload: function(){
-        _this.currentAudioDuration = this.duration() * 1000;
-        _this.renderPhrases(this, phrases);
-      }
+    this.loadSound(filename, phrases, function(audio){
+      _this.currentAudioDuration = audio.duration() * 1000;
+      _this.renderPhrases(audio, phrases);
     });
 
     this.currentPhraseIndex = false;
+    this.currentPhraseEl = false;
     this.currentIndex = index;
     this.currentPhrases = phrases;
+    this.currentFilename = filename;
   };
 
   AppEditPhrases.prototype.onSelectPhrase = function($phrase){
     $(".phrase").removeClass("selected");
     $phrase.addClass("selected");
     this.currentPhraseIndex = parseInt($phrase.attr("data-index"));
+    this.currentPhraseEl = $phrase.find(".progress").first();
+    this.currentPhrase = this.currentPhrases[this.currentPhraseIndex];
   };
 
   AppEditPhrases.prototype.onZoom = function(delta, mouseX){
@@ -186,7 +215,6 @@ var AppEditPhrases = (function() {
     var zoom = this.zoom + delta * zoomStep;
     if (zoom < zoomRange[0]) zoom = zoomRange[0];
     else if (zoom > zoomRange[1]) zoom = zoomRange[1];
-
 
     var $wrapper = this.$wrapper;
     var wrapperOffset = $wrapper.offset();
@@ -222,6 +250,18 @@ var AppEditPhrases = (function() {
     });
   };
 
+  AppEditPhrases.prototype.playCurrent = function(){
+    var _this = this;
+    var index = this.currentPhraseIndex;
+    var sound = this.sound;
+
+    if (index !== false && sound) {
+      this.progressing = true;
+      sound.play(""+index);
+      setTimeout(function(){ _this.renderProgress(); }, 10);
+    }
+  }
+
   AppEditPhrases.prototype.renderPhrases = function(sound, phrases) {
     var _this = this;
     var dur = sound.duration() * 1000;
@@ -230,7 +270,7 @@ var AppEditPhrases = (function() {
     $phrases.empty();
     var $container = $('<div></div>');
     _.each(phrases, function(p, i){
-      var $phrase = $('<div class="phrase" data-index="'+i+'"></div>');
+      var $phrase = $('<div class="phrase" data-index="'+i+'"><div class="progress"></div></div>');
       var w = p.dur / dur * 100;
       var x = p.start / dur * 100;
       $phrase.css({
@@ -265,6 +305,18 @@ var AppEditPhrases = (function() {
       }
     });
   };
+
+  AppEditPhrases.prototype.renderProgress = function(){
+    if (!this.progressing || !this.currentPhraseEl || !this.sound || this.currentPhraseIndex===false) return false;
+
+    var current = this.currentPhrase;
+    var _this = this;
+    var pos = this.sound.seek();
+    var progress = norm(pos*1000, current.start, current.start+current.dur);
+    this.currentPhraseEl.css("left", (progress*100)+"%")
+
+    requestAnimationFrame(function(){ _this.renderProgress(); });
+  }
 
   AppEditPhrases.prototype.renderSpectrogram = function(filename) {
     var $spectrogram = this.$spectrogram;
