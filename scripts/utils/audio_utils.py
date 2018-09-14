@@ -12,7 +12,7 @@ from pprint import pprint
 import re
 import sys
 
-def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False):
+def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False, plotfilename="../data/output/plot.png"):
     basename = os.path.basename(fn).split('.')[0]
 
     # load audio
@@ -76,7 +76,7 @@ def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, am
         # print("pos=%s, dur=%s, hz=%s (%s) power=%s" % (start, dur, hz, note, power))
 
     if plot:
-        showAudioPlot(y, e, slices)
+        showAudioPlot(y, e, slices, filename=plotfilename)
 
     return (sampleData, ysamples, y, sr)
 
@@ -179,7 +179,7 @@ def getSlices(e, ampMin, minLen, maxLen):
 
     return slices
 
-def showAudioPlot(y, e, slices, figsize=(30,3), downsample=100):
+def showAudioPlot(y, e, slices, filename="output_plot.png", figsize=(30,3), downsample=100):
     # # plot the raw waveform
     # plt.figure(figsize=figsize)
     # plt.plot(y[::downsample])
@@ -202,7 +202,11 @@ def showAudioPlot(y, e, slices, figsize=(30,3), downsample=100):
     plt.xlim([0, len(e)])
     plt.gca().xaxis.set_visible(False)
     plt.gca().yaxis.set_visible(False)
-    plt.show()
+
+    # plt.show()
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches="tight", pad_inches=0)
+    plt.close()
 
 def volumeToDb(volume):
     db = 0.0
