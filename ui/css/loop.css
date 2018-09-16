@@ -1,0 +1,56 @@
+.loops {
+  padding: 1rem;
+}
+
+.phrase-group {
+  display: inline-block;
+  position: relative;
+  margin: 0 0.5rem 0.25rem 0;
+}
+.phrase-group > div {
+  position: relative;
+}
+.phrase-group h2 {
+  font-size: 0.5rem;
+  position: absolute;
+  color: white;
+  left: 0.5rem;
+  top: 0.1rem;
+  z-index: 10;
+}
+.phrase {
+  display: inline-block;
+  background: black;
+  position: relative;
+}
+.phrase a {
+  display: block;
+  width: 80px;
+  height: 80px;
+  position: relative;
+}
+.phrase a:hover:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.2);
+}
+.phrase.active {
+  animation: flash 1s linear infinite;
+}
+
+@keyframes flash {
+  from,
+  50%,
+  to {
+    opacity: 1;
+  }
+  25%,
+  75% {
+    opacity: 0;
+  }
+}

@@ -8,3 +8,9 @@ body {
   box-sizing: border-box;
   padding: 1rem;
 }
+
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
