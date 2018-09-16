@@ -8,17 +8,18 @@ import os
 from pprint import pprint
 from pydub import AudioSegment
 import sys
-from utils import volumeToDb
+from utils import addReverb, volumeToDb
 
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/sample/mix.txt", help="Input txt file")
 parser.add_argument('-dir', dest="AUDIO_DIR", default="../audio/output/birds/", help="Input audio directory")
-parser.add_argument('-left', dest="PAD_LEFT", default=2000, type=int, help="Pad left in milliseconds")
-parser.add_argument('-right', dest="PAD_RIGHT", default=2000, type=int, help="Pad right in milliseconds")
+parser.add_argument('-left', dest="PAD_LEFT", default=3000, type=int, help="Pad left in milliseconds")
+parser.add_argument('-right', dest="PAD_RIGHT", default=3000, type=int, help="Pad right in milliseconds")
 parser.add_argument('-s0', dest="EXCERPT_START", default=-1, type=int, help="Slice start in ms")
 parser.add_argument('-s1', dest="EXCERPT_END", default=-1, type=int, help="Slice end in ms")
-parser.add_argument('-out', dest="OUTPUT_FILE", default="../audio/output/sample_mix.wav", help="Output audio file")
+parser.add_argument('-reverb', dest="REVERB", default=75, type=int, help="Add reverb (0-100)")
+parser.add_argument('-out', dest="OUTPUT_FILE", default="../audio/output/sample_mix.mp3", help="Output audio file")
 args = parser.parse_args()
 
 INPUT_FILE = args.INPUT_FILE
@@ -27,10 +28,14 @@ PAD_LEFT = args.PAD_LEFT
 PAD_RIGHT = args.PAD_RIGHT
 EXCERPT_START = args.EXCERPT_START
 EXCERPT_END = args.EXCERPT_END
+REVERB = args.REVERB
 OUTPUT_FILE = args.OUTPUT_FILE
 
 MIN_VOLUME = 0.01
 MAX_VOLUME = 10.0
+FADE_OUT_DUR = 100
+REVERB_PAD = 3000
+SAMPLE_WIDTH = 2
 
 # Read input file
 lines = [line.strip() for line in open(INPUT_FILE)]
@@ -50,7 +55,7 @@ instructions = []
 for i, line in enumerate(lines):
     if i < instructionStartIndex:
         continue
-    start, soundIndex, volume, pan = tuple(line.split(","))
+    start, soundIndex, clipStart, clipDur, volume, pan = tuple(line.split(","))
 
     # parse volume
     volume = float(volume)
@@ -62,6 +67,8 @@ for i, line in enumerate(lines):
     instructions.append({
         "start": int(start) + PAD_LEFT,
         "soundIndex": int(soundIndex),
+        "clipStart": int(clipStart),
+        "clipDur": int(clipDur),
         "db": db,
         "pan": float(pan)
     })
@@ -80,11 +87,48 @@ for i, sound in enumerate(sounds):
     # Don't load sound if we don't have to
     if i not in soundIndices:
         continue
-    segment = AudioSegment.from_file(sound["filename"], format="wav")
+    fformat = sound["filename"].split(".")[-1].lower()
+    segment = AudioSegment.from_file(sound["filename"], format=fformat)
     # convert to stereo
     if segment.channels != 2:
         segment = segment.set_channels(2)
-    sounds[i]["audio"] = segment
+    # convert sample width
+    if segment.sample_width != SAMPLE_WIDTH:
+        segment = segment.set_sample_width(SAMPLE_WIDTH)
+
+    # look through instructions to find unique clips
+    clips = [(ii["clipStart"], ii["clipDur"]) for ii in instructions if ii["soundIndex"]==i]
+    clips = list(set(clips))
+
+    # make segments from clips
+    segments = []
+    for clipStart, clipDur in clips:
+        clipEnd = None
+        if clipDur > 0:
+            clipEnd = clipStart + clipDur
+        clip = segment[clipStart:clipEnd]
+        if clipEnd is None:
+            clip = segment[clipStart:]
+
+        # add a fade out to avoid clicking
+        fadeDur = min(FADE_OUT_DUR, clipDur)
+        if clipDur <= 0:
+            fadeDur = FADE_OUT_DUR
+        clip = clip.fade_out(fadeDur)
+
+        # add reverb
+        if REVERB > 0:
+            # pad clip to accommodate reverb
+            clip += AudioSegment.silent(duration=REVERB_PAD, frame_rate=clip.frame_rate)
+            clip = addReverb(clip, reverberance=REVERB)
+
+        segments.append({
+            "id": (clipStart, clipDur),
+            "start": clipStart,
+            "dur": clipDur,
+            "sound": clip
+        })
+    sounds[i]["segments"] = segments
 
 print("Loaded %s sounds" % len(sounds))
 
@@ -98,7 +142,7 @@ if INSTRUCTION_COUNT <= 0 or len(sounds) <= 0:
 # determine duration
 last = instructions[-1]
 duration = last["start"] + len(sounds[last["soundIndex"]]) + PAD_RIGHT
-frame_rate = sounds[0]["audio"].frame_rate
+frame_rate = sounds[0]["segments"][0]["sound"].frame_rate
 print("Creating audio file with duration %ss" % round(duration/1000.0, 3))
 
 progress = 0
@@ -109,17 +153,20 @@ def makeTrack(p):
     frame_rate = p["frame_rate"]
     instructions = p["instructions"]
     sound = p["sound"]
+    segments = sound["segments"]
 
     # build audio
     baseAudio = AudioSegment.silent(duration=duration, frame_rate=frame_rate)
     baseAudio = baseAudio.set_channels(2)
     for index, i in enumerate(instructions):
-        newSound = sound["audio"]
+        segment = [s for s in segments if s["id"]==(i["clipStart"], i["clipDur"])].pop()
+        sound = segment["sound"]
+
         if i["db"] != 0.0:
-            newSound = newSound.apply_gain(i["db"])
+            sound = sound.apply_gain(i["db"])
         if i["pan"] != 0.0:
-            newSound = newSound.pan(i["pan"])
-        baseAudio = baseAudio.overlay(newSound, position=i["start"])
+            sound = sound.pan(i["pan"])
+        baseAudio = baseAudio.overlay(sound, position=i["start"])
 
         progress += 1
         sys.stdout.write('\r')

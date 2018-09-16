@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import array
 import librosa
 from librosa import display
 import math
@@ -9,8 +10,27 @@ from matplotlib import patches
 import numpy as np
 import os
 from pprint import pprint
+from pydub import AudioSegment
+from pysndfx import AudioEffectsChain
 import re
 import sys
+
+def addReverb(sound, reverberance=50):
+    # convert pydub sound to np array
+    samples = np.array(sound.get_array_of_samples())
+    samples = samples.astype(np.int16)
+
+    # apply reverb effect
+    fx = (
+        AudioEffectsChain()
+        .reverb(reverberance=reverberance)
+    )
+    y = fx(samples)
+
+    # convert it back to an array and create a new sound clip
+    newData = array.array(sound.array_type, y)
+    newSound = sound._spawn(newData)
+    return newSound
 
 def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False, plotfilename="../data/output/plot.png"):
     basename = os.path.basename(fn).split('.')[0]

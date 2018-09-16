@@ -104,7 +104,7 @@ for sample in samples:
     lines.append(sample)
 lines.append("---")
 for i in instructions:
-    row = [i["start"], i["soundIndex"], i["volume"], i["pan"]]
+    row = [i["start"], i["soundIndex"], 0, -1, i["volume"], i["pan"]]
     row = [str(col) for col in row]
     line = ",".join(row)
     lines.append(line)
