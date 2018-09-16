@@ -55,7 +55,7 @@ instructions = []
 for i, line in enumerate(lines):
     if i < instructionStartIndex:
         continue
-    start, soundIndex, clipStart, clipDur, volume, pan = tuple(line.split(","))
+    start, soundIndex, clipStart, clipDur, volume, pan, fadeIn, fadeOut = tuple(line.split(","))
 
     # parse volume
     volume = float(volume)
@@ -70,7 +70,9 @@ for i, line in enumerate(lines):
         "clipStart": int(clipStart),
         "clipDur": int(clipDur),
         "db": db,
-        "pan": float(pan)
+        "pan": float(pan),
+        "fadeIn": int(fadeIn),
+        "fadeOut": int(fadeOut)
     })
 
 # Make excerpt
@@ -166,6 +168,10 @@ def makeTrack(p):
             sound = sound.apply_gain(i["db"])
         if i["pan"] != 0.0:
             sound = sound.pan(i["pan"])
+        if i["fadeIn"] > 0:
+            sound = sound.fade_in(i["fadeIn"])
+        if i["fadeOut"] > 0:
+            sound = sound.fade_out(i["fadeOut"])
         baseAudio = baseAudio.overlay(sound, position=i["start"])
 
         progress += 1
