@@ -234,3 +234,27 @@ def volumeToDb(volume):
         # half volume = −6db = 10*log(0.5*0.5)
         db = 10.0 * math.log(volume**2)
     return db
+
+def writeMixFile(outputfile, sounds, instructions):
+    # build output file
+    lines = []
+    for s in sounds:
+        lines.append(s)
+    lines.append("---")
+    for i in instructions:
+        # define defaults
+        clipStart = i["clipStart"] if "clipStart" in i else 0
+        clipDur = i["clipDur"] if "clipDur" in i else -1
+        volume = i["volume"] if "volume" in i else 1.0
+        pan = i["pan"] if "pan" in i else 0.0
+        fadeIn = i["fadeIn"] if "fadeIn" in i else 0
+        fadeOut = i["fadeOut"] if "fadeOut" in i else 0
+        # must at least have start and soundIndex
+        row = [i["start"], i["soundIndex"], clipStart, clipDur, volume, pan, fadeIn, fadeOut]
+        row = [str(col) for col in row]
+        line = ",".join(row)
+        lines.append(line)
+    outString = "\n".join(lines)
+    with open(outputfile, 'w') as f:
+        f.write(outString)
+        print("Wrote %s instructions to %s" % (len(instructions), outputfile))

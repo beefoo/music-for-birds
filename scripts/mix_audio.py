@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# python -W ignore mix_audio.py -in ../data/output/bird_sort_hz_mix.txt -dir ../audio/downloads/birds/%s.mp3 -out ../audio/output/bird_sort_hz_mix.mp3
+
 import argparse
 import math
 from multiprocessing import Pool
@@ -13,7 +15,7 @@ from utils import addReverb, volumeToDb
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/sample/mix.txt", help="Input txt file")
-parser.add_argument('-dir', dest="AUDIO_DIR", default="../audio/output/birds/", help="Input audio directory")
+parser.add_argument('-dir', dest="AUDIO_DIR", default="../audio/output/birds/%s.wav", help="Input audio directory")
 parser.add_argument('-left', dest="PAD_LEFT", default=3000, type=int, help="Pad left in milliseconds")
 parser.add_argument('-right', dest="PAD_RIGHT", default=3000, type=int, help="Pad right in milliseconds")
 parser.add_argument('-s0', dest="EXCERPT_START", default=-1, type=int, help="Slice start in ms")
@@ -48,7 +50,7 @@ for i, line in enumerate(lines):
         instructionStartIndex = i + 1
         break
     soundFiles.append(line)
-sounds = [{"filename": AUDIO_DIR+fn} for fn in soundFiles]
+sounds = [{"filename": AUDIO_DIR % fn} for fn in soundFiles]
 
 # Retrieve instructions
 instructions = []
@@ -194,6 +196,8 @@ pool = ThreadPool()
 tracks = pool.map(makeTrack, trackParams)
 pool.close()
 pool.join()
+# for p in trackParams:
+#     tracks.append(makeTrack(p))
 
 print("Combining tracks...")
 baseAudio = AudioSegment.silent(duration=duration, frame_rate=frame_rate)

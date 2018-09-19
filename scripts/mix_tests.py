@@ -7,6 +7,7 @@ import os
 from pprint import pprint
 from pydub import AudioSegment
 import sys
+from utils import writeMixFile
 
 # input
 parser = argparse.ArgumentParser()
@@ -44,7 +45,7 @@ beats = DUR / BEAT
 
 if MODE == "volume":
     fn = files[0]
-    basename = os.path.basename(fn)
+    basename = os.path.basename(fn).split('.')[0]
     samples.append(basename)
     phases = 5
     for i in range(beats):
@@ -54,13 +55,12 @@ if MODE == "volume":
         instructions.append({
             "start": i * BEAT,
             "soundIndex": 0,
-            "volume": volume,
-            "pan": 0
+            "volume": volume
         })
 
 elif MODE == "pan":
     fn = files[0]
-    basename = os.path.basename(fn)
+    basename = os.path.basename(fn).split('.')[0]
     samples.append(basename)
     phases = 5
     for i in range(beats):
@@ -70,12 +70,11 @@ elif MODE == "pan":
         instructions.append({
             "start": i * BEAT,
             "soundIndex": 0,
-            "volume": 1.0,
             "pan": pan
         })
 
 elif MODE == "loop":
-    samples = [os.path.basename(fn) for fn in files]
+    samples = [os.path.basename(fn).split('.')[0] for fn in files]
     sampleCount = len(samples)
     counts = 16
     panPhases = 6
@@ -98,17 +97,4 @@ elif MODE == "loop":
                 "pan": pan
             })
 
-# build output file
-lines = []
-for sample in samples:
-    lines.append(sample)
-lines.append("---")
-for i in instructions:
-    row = [i["start"], i["soundIndex"], 0, -1, i["volume"], i["pan"], 0, 0]
-    row = [str(col) for col in row]
-    line = ",".join(row)
-    lines.append(line)
-outString = "\n".join(lines)
-with open(OUTPUT_FILE, 'w') as f:
-    f.write(outString)
-    print "Wrote %s instructions to %s" % (len(instructions), OUTPUT_FILE)
+writeMixFile(OUTPUT_FILE, samples, instructions)
