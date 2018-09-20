@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# python -W ignore mix_audio.py -in ../data/output/bird_sort_hz_mix.txt -dir ../audio/downloads/birds/%s.mp3 -out ../audio/output/bird_sort_hz_mix.mp3
+# python -W ignore mix_audio.py -in ../data/output/bird_sort_hz_mix.txt -dir ../audio/downloads/birds/%s.mp3 -out ../audio/output/bird_sort_hz_mix.mp3 -reverb 50
 
 import argparse
 import math
@@ -35,7 +35,8 @@ OUTPUT_FILE = args.OUTPUT_FILE
 
 MIN_VOLUME = 0.01
 MAX_VOLUME = 10.0
-FADE_OUT_DUR = 100
+CLIP_FADE_IN_DUR = 100
+CLIP_FADE_OUT_DUR = 100
 REVERB_PAD = 3000
 SAMPLE_WIDTH = 2
 
@@ -114,11 +115,10 @@ for i, sound in enumerate(sounds):
         if clipEnd is None:
             clip = segment[clipStart:]
 
-        # add a fade out to avoid clicking
-        fadeDur = min(FADE_OUT_DUR, clipDur)
-        if clipDur <= 0:
-            fadeDur = FADE_OUT_DUR
-        clip = clip.fade_out(fadeDur)
+        # add a fade in/out to avoid clicking
+        fadeInDur = CLIP_FADE_IN_DUR if clipDur <= 0 else min(CLIP_FADE_IN_DUR, clipDur)
+        fadeOutDur = CLIP_FADE_OUT_DUR if clipDur <= 0 else min(CLIP_FADE_OUT_DUR, clipDur)
+        clip = clip.fade_in(fadeInDur).fade_out(fadeOutDur)
 
         # add reverb
         if REVERB > 0:
