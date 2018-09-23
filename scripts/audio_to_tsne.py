@@ -117,9 +117,14 @@ data = [item for sublist in data for item in sublist]
 featureVectors = [d["featureVector"] for d in data]
 model = TSNE(n_components=2, learning_rate=150, perplexity=30, verbose=2, angle=0.1).fit_transform(featureVectors)
 
+print("%s samples found." % len(featureVectors))
+x = model[:,0]
+y = model[:,1]
+
 if PLOT:
-    x=model[:,0]
-    y=model[:,1]
     plt.figure(figsize = (10,10))
+    # parents = list(set([d["parent"] for d in data]))
+    # colors = [parents.index(d["parent"]) for d in data]
+    # plt.scatter(x, y, c=colors)
     plt.scatter(x, y)
     plt.show()
