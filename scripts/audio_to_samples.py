@@ -5,7 +5,7 @@
 # Usage:
     # python audio_to_samples.py -plot 1
     # python audio_to_samples.py -save 1
-    # python audio_to_samples.py -in "../audio/downloads/birds/*.mp3"
+    # python audio_to_samples.py -in "../audio/downloads/birds/*.mp3" -saved 1
     # python audio_to_samples.py -in "../data/usergen/saved_birds.json" -plot 1
 
 import argparse
@@ -86,7 +86,7 @@ progress = 0
 def makeSamples(fn):
     global progress
     sampleData = []
-    basename = os.path.basename(fn).split('.')[0]
+    basename = os.path.splitext(os.path.basename(fn))[0]
     plotfilename = PLOT_DIR % basename
 
     if SAVE_DATA or SAVE or PLOT and (OVERWRITE or not os.path.isfile(plotfilename)):

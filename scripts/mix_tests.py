@@ -39,14 +39,12 @@ if fileCount <= 0:
     print("No samples found")
     sys.exit(1)
 
-samples = []
 instructions = []
 beats = DUR / BEAT
 
 if MODE == "volume":
     fn = files[0]
-    basename = os.path.basename(fn).split('.')[0]
-    samples.append(basename)
+    basename = os.path.splitext(os.path.basename(fn))[0]
     phases = 5
     for i in range(beats):
         x = 1.0 * i / (beats-1)
@@ -54,14 +52,13 @@ if MODE == "volume":
         volume = round(volume, PRECISION)
         instructions.append({
             "start": i * BEAT,
-            "soundIndex": 0,
+            "sound": basename,
             "volume": volume
         })
 
 elif MODE == "pan":
     fn = files[0]
-    basename = os.path.basename(fn).split('.')[0]
-    samples.append(basename)
+    basename = os.path.splitext(os.path.basename(fn))[0]
     phases = 5
     for i in range(beats):
         x = 1.0 * i / (beats-1)
@@ -69,12 +66,12 @@ elif MODE == "pan":
         pan = round(pan, PRECISION)
         instructions.append({
             "start": i * BEAT,
-            "soundIndex": 0,
+            "sound": basename,
             "pan": pan
         })
 
 elif MODE == "loop":
-    samples = [os.path.basename(fn).split('.')[0] for fn in files]
+    samples = [os.path.splitext(os.path.basename(fn))[0] for fn in files]
     sampleCount = len(samples)
     counts = 16
     panPhases = 6
@@ -92,9 +89,9 @@ elif MODE == "loop":
             pan = round(pan, PRECISION)
             instructions.append({
                 "start": j * BEAT + offset,
-                "soundIndex": i,
+                "sound": samples[i],
                 "volume": volume * volumeMultiplier,
                 "pan": pan
             })
 
-writeMixFile(OUTPUT_FILE, samples, instructions)
+writeMixFile(OUTPUT_FILE, instructions)

@@ -46,8 +46,7 @@ def isAuthor(str):
 
 def readFile(f):
     global progress
-    fname = os.path.basename(f)
-    basename = fname.split('.')[0]
+    basename = os.path.splitext(os.path.basename(f))[0]
 
     # use librosa to get duration
     duration = round(librosa.get_duration(filename=f), 3)

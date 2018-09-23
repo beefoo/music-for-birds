@@ -3,8 +3,15 @@
 import math
 import numpy as np
 
+def lerp(ab, amount):
+    a, b = ab
+    return (b-a) * amount + a
+
 def norm(value, a, b):
     return 1.0 * (value - a) / (b - a)
+
+def roundToNearest(n, nearest):
+    return 1.0 * round(1.0*n/nearest) * nearest
 
 def weighted_mean(values):
     count = len(values)

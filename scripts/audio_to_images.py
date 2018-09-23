@@ -69,7 +69,7 @@ progress = 0
 
 def makeImage(fn):
     global progress
-    basename = os.path.basename(fn).split('.')[0]
+    basename = basename = os.path.splitext(os.path.basename(fn))[0]
     fileout = OUTPUT_FILE % basename
     w = 24
     h = 8

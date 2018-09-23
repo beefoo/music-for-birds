@@ -39,15 +39,12 @@ print("%s range: [%s - %s]" % (SORT_BY, min(values), max(values)))
 totalDur = sum([int(s["dur"]*(1.0-OVERLAP)) for s in sampleData])
 print("Total time: %s" % time.strftime('%H:%M:%S', time.gmtime(totalDur/1000)))
 
-parents = list(set([s["parent"] for s in sampleData]))
-print("%s sound files" % len(parents))
-
 instructions = []
 start = 0
 for s in sampleData:
     instructions.append({
         "start": start,
-        "soundIndex": parents.index(s["parent"]),
+        "sound": s["parent"],
         "clipStart": s["start"],
         "clipDur": s["dur"]
     })

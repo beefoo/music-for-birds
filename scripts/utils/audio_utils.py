@@ -33,7 +33,7 @@ def addReverb(sound, reverberance=50):
     return newSound
 
 def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False, plotfilename="../data/output/plot.png"):
-    basename = os.path.basename(fn).split('.')[0]
+    basename = os.path.splitext(os.path.basename(fn))[0]
 
     # load audio
     y, sr = librosa.load(fn)
@@ -235,13 +235,17 @@ def volumeToDb(volume):
         db = 10.0 * math.log(volume**2)
     return db
 
-def writeMixFile(outputfile, sounds, instructions):
+def writeMixFile(outputfile, instructions):
+    # get sounds from instructions
+    sounds = list(set([i["sound"] for i in instructions]))
+    print("%s sound files" % len(sounds))
     # build output file
     lines = []
     for s in sounds:
         lines.append(s)
     lines.append("---")
     for i in instructions:
+        soundIndex = sounds.index(i["sound"])
         # define defaults
         clipStart = i["clipStart"] if "clipStart" in i else 0
         clipDur = i["clipDur"] if "clipDur" in i else -1
@@ -250,7 +254,7 @@ def writeMixFile(outputfile, sounds, instructions):
         fadeIn = i["fadeIn"] if "fadeIn" in i else 0
         fadeOut = i["fadeOut"] if "fadeOut" in i else 0
         # must at least have start and soundIndex
-        row = [i["start"], i["soundIndex"], clipStart, clipDur, volume, pan, fadeIn, fadeOut]
+        row = [i["start"], soundIndex, clipStart, clipDur, volume, pan, fadeIn, fadeOut]
         row = [str(col) for col in row]
         line = ",".join(row)
         lines.append(line)

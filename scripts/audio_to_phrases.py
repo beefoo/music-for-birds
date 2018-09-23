@@ -5,7 +5,7 @@
 # Usage:
     # python audio_to_phrases.py -plot 1
     # python audio_to_phrases.py -save 1
-    # python audio_to_phrases.py -in "../audio/downloads/birds/*.mp3"
+    # python audio_to_phrases.py -in "../audio/downloads/birds/*.mp3" -saved 1
 
 import argparse
 import csv
@@ -30,6 +30,7 @@ parser.add_argument('-maxp', dest="MAX_PHRASE_DUR", default=5.00, type=float, he
 parser.add_argument('-maxs', dest="MAX_SILENCE", default=0.25, type=float, help="Maximum silence between samples in phrase in seconds")
 parser.add_argument('-amp', dest="AMP_THESHOLD", default=-1, type=float, help="Amplitude theshold, -1 for default")
 parser.add_argument('-save', dest="SAVE", default=0, type=int, help="Save files?")
+parser.add_argument('-saved', dest="SAVE_DATA", default=0, type=int, help="Save data files?")
 parser.add_argument('-plot', dest="PLOT", default=0, type=int, help="Show plot?")
 parser.add_argument('-dir', dest="SAMPLE_DIR", default="../audio/output/birds_phrases", help="Output dir")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_audio_phrases.csv", help="CSV output file")
@@ -45,6 +46,7 @@ MAX_PHRASE_DUR = args.MAX_PHRASE_DUR
 MAX_SILENCE = args.MAX_SILENCE
 AMP_THESHOLD = args.AMP_THESHOLD
 SAVE = args.SAVE > 0
+SAVE_DATA = args.SAVE_DATA > 0
 PLOT = args.PLOT > 0
 SAMPLE_DIR = args.SAMPLE_DIR
 OUTPUT_FILE = args.OUTPUT_FILE
@@ -70,7 +72,7 @@ progress = 0
 def makePhrases(fn):
     global progress
     # get sample data
-    basename = os.path.basename(fn).split('.')[0]
+    basename = os.path.splitext(os.path.basename(fn))[0]
     sampleData, ysamples, y, sr = getAudioSamples(fn, min_dur=MIN_DUR, max_dur=MAX_DUR, fft=FFT, hop_length=HOP_LEN, amp_threshold=AMP_THESHOLD, plot=PLOT)
 
     # get phrases from sample data
@@ -108,14 +110,15 @@ data = pool.map(makePhrases, files)
 pool.close()
 pool.join()
 
-print("Writing data to file...")
-headings = ["parent", "start", "dur", "phrase"]
-rowCount = 0
-with open(OUTPUT_FILE, 'wb') as f:
-    writer = csv.writer(f)
-    writer.writerow(headings)
-    for pdata in data:
-        for entry in pdata:
-            writer.writerow([entry[key] for key in headings])
-            rowCount += 1
-print("Wrote %s rows to %s" % (rowCount, OUTPUT_FILE))
+if SAVE_DATA:
+    print("Writing data to file...")
+    headings = ["parent", "start", "dur", "phrase"]
+    rowCount = 0
+    with open(OUTPUT_FILE, 'wb') as f:
+        writer = csv.writer(f)
+        writer.writerow(headings)
+        for pdata in data:
+            for entry in pdata:
+                writer.writerow([entry[key] for key in headings])
+                rowCount += 1
+    print("Wrote %s rows to %s" % (rowCount, OUTPUT_FILE))

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # python -W ignore mix_audio.py -in ../data/output/bird_sort_hz_mix.txt -dir ../audio/downloads/birds/%s.mp3 -out ../audio/output/bird_sort_hz_mix.mp3 -reverb 50
+# python -W ignore mix_audio.py -in ../data/output/bird_mix.txt -dir ../audio/downloads/birds/%s.mp3 -out ../audio/output/bird_mix.mp3
 
 import argparse
 import math
@@ -20,7 +21,7 @@ parser.add_argument('-left', dest="PAD_LEFT", default=3000, type=int, help="Pad 
 parser.add_argument('-right', dest="PAD_RIGHT", default=3000, type=int, help="Pad right in milliseconds")
 parser.add_argument('-s0', dest="EXCERPT_START", default=-1, type=int, help="Slice start in ms")
 parser.add_argument('-s1', dest="EXCERPT_END", default=-1, type=int, help="Slice end in ms")
-parser.add_argument('-reverb', dest="REVERB", default=75, type=int, help="Add reverb (0-100)")
+parser.add_argument('-reverb', dest="REVERB", default=50, type=int, help="Add reverb (0-100)")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../audio/output/sample_mix.mp3", help="Output audio file")
 args = parser.parse_args()
 
