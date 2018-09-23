@@ -55,28 +55,18 @@ print("Found %s rows in %s" % (len(sampleData), INPUT_SAMPLE_FILE))
 print("Found %s rows in %s" % (len(phraseStats), INPUT_PHRASE_STATS_FILE))
 print("Found %s rows in %s" % (len(chordData), INPUT_CHORDS_FILE))
 
-# get octave range
-octaves = list(set([s["octave"] for s in sampleData]))
-minOctave = min(octaves)
-maxOctave = max(octaves)
-octaves = list(set([c["octave"] for c in chordData]))
-minChordOctave = min(octaves)
-maxChordOctave = max(octaves)
-print("Target octave range: %s - %s" % (minChordOctave, maxChordOctave))
-print("Actual octave range: %s - %s" % (minOctave, maxOctave))
-
-# sort by duration and group
-sampleData = sorted(sampleData, key=lambda k: k["dur"])
-noteOctaveValues = set([s["noteOctave"] for s in sampleData])
-allSamples = dict([(v, [s for s in sampleData if s["noteOctave"]==v]) for v in noteOctaveValues])
-
-# retrieve calls and group
-callSamples = [s for s in sampleData if "call" in s["parent"].lower()]
-callSamples = dict([(v, [s for s in callSamples if s["noteOctave"]==v]) for v in noteOctaveValues])
-
 # group chords
-chordValues = set([c["chord"] for c in chordData])
-chords = [[c for c in chordData if c["chord"]==v] for v in chordValues]
+# chordValues = set([c["chord"] for c in chordData])
+# chords = [[c for c in chordData if c["chord"]==v] for v in chordValues]
+
+# get normalized values for power and duration
+powerValues = [d["power"] for d in sampleData]
+durValues = [d["dur"] for d in sampleData]
+powerRange = (min(powerValues), max(powerValues))
+durRange = (min(durValues), max(durValues))
+for i, d in enumerate(sampleData):
+    sampleData[i]["powerNorm"] = norm(d["power"], powerRange)
+    sampleData[i]["durNorm"] = norm(d["dur"], durRange)
 
 def getPhraseInstructions(sample, start, beats, ms_per_beat, volumeRange=(0.0, 1.0), tempoRange=(1.0, 1.0), panRange=(-1.0, 1.0), roundTo=1):
     ms = 0
@@ -102,36 +92,25 @@ def getPhraseInstructions(sample, start, beats, ms_per_beat, volumeRange=(0.0, 1
         ms += addMs
     return instructions
 
+# sort samples by frequency
+sampleData = sorted(sampleData, key=lambda k: k["hz"])
+maxMs = 3 * 60 * 1000
+
 instructions = []
-chordCount = len(chords)
 ms = 0
 msStep = MS_PER_BEAT + MS_PER_BEAT / 2
-for i, chord in enumerate(chords):
-    noteCount = len(chord)
-    seed = SEEDS[seedPos]
-    seedPos += 1
-    if seedPos >= len(SEEDS):
-        seedPos = 0
-    for j, note in enumerate(chord):
-        samples = []
-        if note["noteOctave"] not in callSamples:
-            print("Warning: no call samples found for %s" % note["noteOctave"])
-            if note["noteOctave"] not in allSamples:
-                print("Warning: no samples found for %s" % note["noteOctave"])
-            else:
-                samples = allSamples[note["noteOctave"]]
-        else:
-            samples = callSamples[note["noteOctave"]]
-        count = len(samples)
-        if count <= 0:
-            samples = [s for s in sampleData if s["note"]==note["note"]]
-            samples = sorted(samples, key=lambda k: abs(k["octave"]-note["octave"]))
-            count = len(samples)
-        half = count / 2
-        random.seed(seed)
-        index = random.randint(0, half) # randomly select sample from first half
-        panRange = (-1.0, 1.0) if j % 2 > 0 else (1.0, -1.0)
-        instructions += getPhraseInstructions(samples[index], ms, BEATS_PER_PHRASE, MS_PER_BEAT, panRange=panRange, roundTo=ROUND_TO_NEAREST)
-        ms += msStep
+
+for i, d in enumerate(sampleData):
+    tempoRange = (1.0, 1.0)
+    if d["durNorm"] >= 0.75 or d["powerNorm"] > 0.25:
+        tempoRange = (0.5, 0.5)
+    elif d["durNorm"] <= 0.25 and d["powerNorm"] < 0.5:
+        tempoRange = (2.0, 2.0)
+    volumeRange = (0.0, max(0.2, 1.0-d["powerNorm"]))
+    panRange = (-1.0, 1.0) if i % 2 > 0 else (1.0, -1.0)
+    instructions += getPhraseInstructions(d, ms, BEATS_PER_PHRASE, MS_PER_BEAT, volumeRange=volumeRange, tempoRange=tempoRange, panRange=panRange, roundTo=ROUND_TO_NEAREST)
+    if (ms + BEATS_PER_PHRASE * MS_PER_BEAT) >= maxMs:
+        break
+    ms += msStep
 
 writeMixFile(OUTPUT_FILE, instructions)

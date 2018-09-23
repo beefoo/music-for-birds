@@ -113,8 +113,8 @@ if DRAW_IMAGE:
         width = 1.0 * entry["dur"] / maxDur * IMAGE_WIDTH
         for note in entry["phrase"]:
             color = COLORS[note["note"]]
-            x0 = norm(note["start"], start, end) * width
-            x1 = norm(note["start"]+note["dur"], start, end) * width
+            x0 = norm(note["start"], (start, end)) * width
+            x1 = norm(note["start"]+note["dur"], (start, end)) * width
             draw.rectangle([x0, y0, x1, y1], fill=color, outline="white")
         sys.stdout.write('\r')
         sys.stdout.write("%s%%" % round(1.0*(i+1)/rowCount*100,1))

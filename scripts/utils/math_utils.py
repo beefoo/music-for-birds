@@ -7,7 +7,8 @@ def lerp(ab, amount):
     a, b = ab
     return (b-a) * amount + a
 
-def norm(value, a, b):
+def norm(value, ab):
+    a, b = ab
     return 1.0 * (value - a) / (b - a)
 
 def roundToNearest(n, nearest):
