@@ -113,11 +113,6 @@ model = TSNE(n_components=2,
 x = model[:,0]
 y = model[:,1]
 
-if PLOT:
-    plt.figure(figsize = (10,10))
-    plt.scatter(x, y)
-    plt.show()
-
 if SAVE_DATA:
     print("Writing data to file...")
     headings = ["parent", "start", "dur", "x", "y"]
@@ -137,3 +132,8 @@ if SAVE_DATA:
         for i, d in enumerate(data):
             writer.writerow([d["parent"], d["start"], d["dur"], round(x_norm[i], precision), round(y_norm[i], precision)])
     print("Wrote %s rows to %s" % (rowCount, OUTPUT_FILE))
+
+if PLOT:
+    plt.figure(figsize = (10,10))
+    plt.scatter(x, y)
+    plt.show()
