@@ -94,6 +94,7 @@ def doTSNE(fn):
         featureVector = getFeatures(ysample, sr)
         featureData.append({
             "parent": basename,
+            "note": d["note"],
             "start": d["start"],
             "dur": d["dur"],
             "featureVector": featureVector
@@ -115,7 +116,11 @@ pool.join()
 
 data = [item for sublist in data for item in sublist]
 featureVectors = [d["featureVector"] for d in data]
-model = TSNE(n_components=2, learning_rate=150, perplexity=30, verbose=2, angle=0.1).fit_transform(featureVectors)
+model = TSNE(n_components=2,
+             learning_rate=150, # increase if too dense, decrease if too uniform
+             verbose=1,
+             angle=0.1 # increase to make faster, decrease to make more accurate
+).fit_transform(featureVectors)
 
 print("%s samples found." % len(featureVectors))
 x = model[:,0]
@@ -123,8 +128,13 @@ y = model[:,1]
 
 if PLOT:
     plt.figure(figsize = (10,10))
+    # Highlight notes
+    notes = list(set([d["note"] for d in data]))
+    colors = [notes.index(d["note"]) for d in data]
+    plt.scatter(x, y, c=colors)
+    # Highlight unique files
     # parents = list(set([d["parent"] for d in data]))
     # colors = [parents.index(d["parent"]) for d in data]
     # plt.scatter(x, y, c=colors)
-    plt.scatter(x, y)
+    # plt.scatter(x, y)
     plt.show()
