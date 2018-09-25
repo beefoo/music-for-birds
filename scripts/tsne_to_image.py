@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Looks for musical samples in arbitrary audio
-# Adapted from: https://github.com/kylemcdonald/AudioNotebooks/blob/master/Multisamples%20to%20Samples.ipynb
-# Usage:
-    # python audio_to_images.py -plot 1
-    # python audio_to_images.py -save 1
-    # python audio_to_images.py -in "../data/usergen/saved_birds.json"
-
 import argparse
 import csv
 import os
@@ -18,8 +11,8 @@ from utils import readCsv
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILE", default="../data/output/birds_phrases_tsne.csv", help="Input csv file")
-parser.add_argument('-width', dest="WIDTH", default=2400, type=int, help="Target width")
-parser.add_argument('-height', dest="HEIGHT", default=2400, type=int, help="Target height")
+parser.add_argument('-width', dest="WIDTH", default=8000, type=int, help="Target width")
+parser.add_argument('-height', dest="HEIGHT", default=8000, type=int, help="Target height")
 parser.add_argument('-rad', dest="RADIUS", default=4, type=int, help="Radius of each audio clip")
 parser.add_argument('-out', dest="OUTPUT_FILE", default="../data/output/birds_phrases_tsne.png", help="Output file")
 args = parser.parse_args()
