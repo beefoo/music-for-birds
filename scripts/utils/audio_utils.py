@@ -32,7 +32,7 @@ def addReverb(sound, reverberance=50):
     newSound = sound._spawn(newData)
     return newSound
 
-def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False, plotfilename="../data/output/plot.png"):
+def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, amp_threshold=-1, plot=False, plotfilename="../data/output/plot.png", groupName=""):
     basename = os.path.splitext(os.path.basename(fn))[0]
 
     # load audio
@@ -82,6 +82,7 @@ def getAudioSamples(fn, min_dur=0.05, max_dur=0.75, fft=2048, hop_length=512, am
         sampleData.append({
             "index": i,
             "parent": basename,
+            "group": groupName,
             "filename": sampleFilename,
             "start": startms,
             "dur": dur,

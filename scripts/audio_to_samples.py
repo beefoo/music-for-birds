@@ -20,12 +20,12 @@ from os.path import join
 import numpy as np
 from pprint import pprint
 import sys
-from utils import getAudioSamples
+from utils import getAudioSamples, readFiles
 
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILES", default="../audio/sample/*.mp3", help="Input file pattern")
-parser.add_argument('-adir', dest="INPUT_AUDIO_DIR", default="../audio/downloads/birds/%s.mp3", help="Input audio directory (if applicable)")
+parser.add_argument('-adir', dest="INPUT_AUDIO_DIR", default="../audio/downloads/birds/%s.mp3", help="Input audio directory (if INPUT_FILES is .json file)")
 parser.add_argument('-samples', dest="SAMPLES", default=8, type=int, help="Max samples to produce, -1 for all")
 parser.add_argument('-min', dest="MIN_DUR", default=0.05, type=float, help="Minimum sample duration in seconds")
 parser.add_argument('-max', dest="MAX_DUR", default=1.00, type=float, help="Maximum sample duration in seconds")
@@ -62,14 +62,9 @@ FFT = 2048
 HOP_LEN = FFT/4
 
 # Read files
-# Read files
-files = []
-if "*" in INPUT_FILES:
-    files = glob.glob(INPUT_FILES)
-elif ".json" in INPUT_FILES:
-    with open(INPUT_FILES) as f:
-        files = [INPUT_AUDIO_DIR % fn for fn in json.load(f)]
+fileGroups, files = readFiles(INPUT_FILES, INPUT_AUDIO_DIR)
 fileCount = len(files)
+hasGroups = len(fileGroups) > 1
 print("Found %s files" % fileCount)
 
 # Make sure output dirs exist
@@ -85,13 +80,17 @@ progress = 0
 
 def makeSamples(fn):
     global progress
+    global hasGroups
+
     sampleData = []
     basename = os.path.splitext(os.path.basename(fn))[0]
+    path, groupName = os.path.split(os.path.dirname(fn))
+    groupName = "" if not hasGroups else groupName
     plotfilename = PLOT_DIR % basename
 
     if SAVE_DATA or SAVE or PLOT and (OVERWRITE or not os.path.isfile(plotfilename)):
 
-        sampleData, ysamples, y, sr = getAudioSamples(fn, min_dur=MIN_DUR, max_dur=MAX_DUR, fft=FFT, hop_length=HOP_LEN, amp_threshold=AMP_THESHOLD, plot=PLOT, plotfilename=plotfilename)
+        sampleData, ysamples, y, sr = getAudioSamples(fn, min_dur=MIN_DUR, max_dur=MAX_DUR, fft=FFT, hop_length=HOP_LEN, amp_threshold=AMP_THESHOLD, plot=PLOT, plotfilename=plotfilename, groupName=groupName)
 
         # if too many samples, take the ones with the most power
         if SAMPLES is not None and len(sampleData) > SAMPLES and (SAVE or SAVE_DATA):
@@ -130,7 +129,7 @@ else:
 
 if SAVE_DATA:
     print("Writing data to file...")
-    headings = ["parent", "start", "dur", "power", "hz", "note", "octave"]
+    headings = ["parent", "group", "start", "dur", "power", "hz", "note", "octave"]
     rowCount = 0
     with open(OUTPUT_FILE, 'wb') as f:
         writer = csv.writer(f)

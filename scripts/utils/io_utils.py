@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import csv
+import glob
+import json
 import os
 
 def parseHeadings(arr, headings):
@@ -28,6 +30,19 @@ def parseNumbers(arr):
         for key in item:
             arr[i][key] = parseNumber(item[key])
     return arr
+
+def readFiles(inputString, dirString=""):
+    fileGroups = inputString.split(",")
+    files = []
+    for group in fileGroups:
+        if "*" in group:
+            files += glob.glob(group)
+        elif ".csv" in group:
+            files += readCsv(group)
+        elif ".json" in group:
+            with open(group) as f:
+                files += [dirString % fn for fn in json.load(f)]
+    return (fileGroups, files)
 
 def readCsv(filename, headings=False, doParseNumbers=True):
     rows = []
