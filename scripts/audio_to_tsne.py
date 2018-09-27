@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# python audio_to_tsne.py -in "../audio/sample/*.mp3,../audio/downloads/ph_percussion/*.mp3" -saved 1 -plot 1
+# python audio_to_tsne.py -in "../audio/downloads/birds/*.mp3,../audio/downloads/ph_string/*.mp3,../audio/downloads/ph_wind/*.mp3,../audio/downloads/ph_percussion/*.mp3" -saved 1
 
 import argparse
 import csv
