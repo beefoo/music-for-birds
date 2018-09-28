@@ -2,6 +2,10 @@
 (function() {
   window.UTIL = {};
 
+  UTIL.distance = function(x1, y1, x2, y2){
+    return Math.hypot(x2-x1, y2-y1);
+  };
+
   UTIL.freqToNote = function(freq) {
     var tuning = 440
     var lineal = 12 * ((Math.log(freq) - Math.log(tuning)) / Math.log(2))

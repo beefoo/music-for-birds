@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# python audio_to_tsne.py -in "../audio/downloads/birds/*.mp3,../audio/downloads/ph_string/*.mp3,../audio/downloads/ph_wind/*.mp3,../audio/downloads/ph_percussion/*.mp3" -saved 1
+# python audio_to_tsne.py -W ignore -in "../audio/downloads/birds/*.mp3,../audio/downloads/ph_string/*.mp3,../audio/downloads/ph_wind/*.mp3,../audio/downloads/ph_percussion/*.mp3" -saved 1
 
 import argparse
 import csv
@@ -21,7 +21,7 @@ from utils import getAudioSamples, readFiles
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_FILES", default="../audio/sample/*.mp3", help="Input file pattern")
 parser.add_argument('-adir', dest="INPUT_AUDIO_DIR", default="../audio/downloads/birds/%s.mp3", help="Input audio directory (if INPUT_FILES is .json file)")
-parser.add_argument('-samples', dest="SAMPLES", default=8, type=int, help="Max samples to produce, -1 for all")
+parser.add_argument('-samples', dest="SAMPLES", default=1, type=int, help="Max samples to produce, -1 for all")
 parser.add_argument('-min', dest="MIN_DUR", default=0.05, type=float, help="Minimum sample duration in seconds")
 parser.add_argument('-max', dest="MAX_DUR", default=1.00, type=float, help="Maximum sample duration in seconds")
 parser.add_argument('-amp', dest="AMP_THESHOLD", default=-1, type=float, help="Amplitude theshold, -1 for default")

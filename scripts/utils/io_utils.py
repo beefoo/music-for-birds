@@ -19,10 +19,11 @@ def parseHeadings(arr, headings):
 def parseNumber(string):
     try:
         num = float(string)
-        if "." not in string:
+        if "." not in string and "e" not in string:
             num = int(string)
         return num
     except ValueError:
+        # print("Value error: %s" % string)
         return string
 
 def parseNumbers(arr):
