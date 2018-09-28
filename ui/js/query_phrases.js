@@ -15,13 +15,6 @@ var AppQueryPhrases = (function() {
     this.init();
   }
 
-  function parseNumber(str){
-    var isNum = /^[\d\.]+$/.test(str);
-    if (isNum && str.indexOf(".") >= 0) return parseFloat(str);
-    else if (isNum) return parseInt(str);
-    else return str;
-  }
-
   AppQueryPhrases.prototype.init = function(){
     this.$el = $("#app");
     this.$resultCount = $("#result-count");
@@ -30,6 +23,7 @@ var AppQueryPhrases = (function() {
     this.data = [];
     this.savedData = [];
     this.saveDataQueue = [];
+    this.player = new Player();
 
     var _this = this;
     var dataPromise = this.loadData(this.opt.dataFile);
@@ -90,7 +84,7 @@ var AppQueryPhrases = (function() {
 
     this.$results.on("click", ".play-button", function(e){
       var entry = _this.data[parseInt($(this).attr("data-index"))];
-      _this.play(entry, shifted);
+      _this.player.play(entry, shifted, $(this));
     });
 
     this.$results.on("click", ".save-button", function(e){
@@ -174,30 +168,6 @@ var AppQueryPhrases = (function() {
       entry.index = i;
       return entry;
     });
-  };
-
-  AppQueryPhrases.prototype.play = function(entry, playFull){
-    var spriteKey = playFull ? "full" : "phrase";
-    if (entry.index !== this.soundIndex) {
-      if (this.sound) this.sound.unload();
-      var sound = new Howl({
-        src: entry.audioFile,
-        sprite: {
-          "phrase": [entry.start, entry.dur],
-          "full": [0, 60000]
-        }
-      });
-      sound.once('load', function(){
-        sound.play(spriteKey);
-      });
-      this.sound = sound;
-
-    } else if (this.sound && this.sound.state()==="loaded") {
-      this.sound.play(spriteKey);
-    }
-    this.soundIndex = entry.index;
-    // update ui
-    $('.play-button[data-parent="'+entry.parent+'"]').addClass('played');
   };
 
   AppQueryPhrases.prototype.query = function(){

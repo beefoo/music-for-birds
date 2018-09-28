@@ -29,63 +29,6 @@ var AppLoopPhrases = (function() {
     this.init();
   }
 
-  function freqToNote(freq) {
-    var tuning = 440
-    var lineal = 12 * ((Math.log(freq) - Math.log(tuning)) / Math.log(2))
-    var midi = Math.round(69 + lineal)
-    // return chromatic[midi % 12];
-    return midi % 12;
-  }
-
-  function lerp(a, b, percent) {
-    return (1.0*b - a) * percent + a;
-  }
-
-  function loadCsvData(csvFilename){
-    var deferred = $.Deferred();
-    Papa.parse(csvFilename, {
-      download: true,
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        if (results.errors.length) console.log(results.errors[0].message);
-        console.log("Found "+results.data.length+" rows in "+csvFilename);
-        deferred.resolve(results.data);
-      }
-    });
-    return deferred.promise();
-  }
-
-  function loadJsonData(jsonFilename){
-    var _this = this;
-    var deferred = $.Deferred();
-    $.getJSON(jsonFilename, function(data) {
-      console.log("Found "+data.length+" entries in "+jsonFilename);
-      deferred.resolve(data);
-    }).fail(function() {
-      console.log("No data found in "+jsonFilename);
-      deferred.resolve([]);
-    });
-    return deferred.promise();
-  }
-
-  function norm(value, a, b){
-    var denom = (b - a);
-    if (denom > 0 || denom < 0) {
-      return (1.0 * value - a) / denom;
-    } else {
-      return 0;
-    }
-  }
-
-  function parseNumber(str){
-    var isNum = /^[\d\.]+$/.test(str);
-    if (isNum && str.indexOf(".") >= 0) return parseFloat(str);
-    else if (isNum) return parseInt(str);
-    else return str;
-  }
-
   AppLoopPhrases.prototype.init = function(){
     this.$el = $("#app");
     this.$loops = $("#loops");
@@ -95,8 +38,8 @@ var AppLoopPhrases = (function() {
     this.loops = [];
 
     var _this = this;
-    var dataPromise = loadCsvData(this.opt.dataFile);
-    var savedDataPromise = loadJsonData(this.opt.savedFile);
+    var dataPromise = UTIL.loadCsvData(this.opt.dataFile);
+    var savedDataPromise = UTIL.loadJsonData(this.opt.savedFile);
 
     $.when.apply($, [dataPromise, savedDataPromise]).then(function(data, savedData){
       _this.data = _this.parseData(data);
@@ -147,8 +90,8 @@ var AppLoopPhrases = (function() {
         html += "<div>";
         var phrases = _.where(data, {parent: parent});
         _.each(phrases, function(phrase, j){
-          var color = colors[freqToNote(phrase.hzMean)];
-          var opacity = lerp(0.2, 1, norm(phrase.hzMean, minHz, maxHz));
+          var color = colors[UTIL.freqToNote(phrase.hzMean)];
+          var opacity = UTIL.lerp(0.2, 1, UTIL.norm(phrase.hzMean, minHz, maxHz));
           html += '<div class="phrase">';
             html += '<a href="#'+phrase.start+':'+phrase.dur+'" data-index="'+phrase.index+'" class="toggle-phrase" style="background: rgba('+color[0]+','+color[1]+','+color[2]+','+opacity+')"></a>';
           html += "</div>";
@@ -187,7 +130,7 @@ var AppLoopPhrases = (function() {
   };
 
   AppLoopPhrases.prototype.phraseOn = function(phrase){
-    console.log(phrase)
+    // console.log(phrase)
     phrase.sound = new Howl({
       src: phrase.audioFile,
       volume: 0.5,

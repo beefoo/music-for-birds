@@ -19,51 +19,6 @@ var AppEditPhrases = (function() {
     this.init();
   }
 
-  function loadCsvData(csvFilename){
-    var deferred = $.Deferred();
-    Papa.parse(csvFilename, {
-      download: true,
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        if (results.errors.length) console.log(results.errors[0].message);
-        console.log("Found "+results.data.length+" rows in "+csvFilename);
-        deferred.resolve(results.data);
-      }
-    });
-    return deferred.promise();
-  }
-
-  function loadJsonData(jsonFilename){
-    var _this = this;
-    var deferred = $.Deferred();
-    $.getJSON(jsonFilename, function(data) {
-      console.log("Found "+data.length+" entries in "+jsonFilename);
-      deferred.resolve(data);
-    }).fail(function() {
-      console.log("No data found in "+jsonFilename);
-      deferred.resolve([]);
-    });
-    return deferred.promise();
-  }
-
-  function norm(value, a, b){
-    var denom = (b - a);
-    if (denom > 0 || denom < 0) {
-      return (1.0 * value - a) / denom;
-    } else {
-      return 0;
-    }
-  }
-
-  function parseNumber(str){
-    var isNum = /^[\d\.]+$/.test(str);
-    if (isNum && str.indexOf(".") >= 0) return parseFloat(str);
-    else if (isNum) return parseInt(str);
-    else return str;
-  }
-
   function pxToPercent($el) {
     var parentW = $el.parent().width();
     var x = $el.position().left / parentW;
@@ -93,9 +48,9 @@ var AppEditPhrases = (function() {
     this.zoom = 100;
 
     var _this = this;
-    var dataPromise = loadCsvData(this.opt.dataFile);
-    var savedDataPromise = loadJsonData(this.opt.savedFile);
-    var editedDataPromise = loadJsonData(this.opt.saveFile);
+    var dataPromise = UTIL.loadCsvData(this.opt.dataFile);
+    var savedDataPromise = UTIL.loadJsonData(this.opt.savedFile);
+    var editedDataPromise = UTIL.loadJsonData(this.opt.saveFile);
 
     $.when.apply($, [dataPromise, savedDataPromise, editedDataPromise]).then(function(data, savedData, editedData){
       _this.data = _this.parseData(data);
@@ -312,7 +267,7 @@ var AppEditPhrases = (function() {
     var current = this.currentPhrase;
     var _this = this;
     var pos = this.sound.seek();
-    var progress = norm(pos*1000, current.start, current.start+current.dur);
+    var progress = UTIL.norm(pos*1000, current.start, current.start+current.dur);
     this.currentPhraseEl.css("left", (progress*100)+"%")
 
     requestAnimationFrame(function(){ _this.renderProgress(); });

@@ -13,19 +13,13 @@ var AppBrowsePhrases = (function() {
     this.init();
   }
 
-  function parseNumber(str){
-    var isNum = /^[\d\.]+$/.test(str);
-    if (isNum && str.indexOf(".") >= 0) return parseFloat(str);
-    else if (isNum) return parseInt(str);
-    else return str;
-  }
-
   AppBrowsePhrases.prototype.init = function(){
     this.$el = $("#app");
 
     var _this = this;
     var dataPromise = this.loadData(this.opt.dataFile);
     var imagePromise = this.loadImage(this.opt.imgFile);
+    this.player = new Player();
 
     $.when.apply($, [dataPromise, imagePromise]).then(function(){
       _this.onReady();
@@ -114,7 +108,7 @@ var AppBrowsePhrases = (function() {
     if (!this.currentPhrase) return false;
     var phrase = this.currentPhrase;
 
-    this.play(phrase);
+    this.player.play(phrase);
   };
 
   AppBrowsePhrases.prototype.onReady = function(){
@@ -134,34 +128,13 @@ var AppBrowsePhrases = (function() {
       // var phrase = entry.phrase.split(",");
       // var keys = ["start", "dur", "power", "hz", "note", "octave"];
       // entry.phrase = _.map(phrase, function(note){
-      //   var values = _.map(note.split(":"), function(v){ return parseNumber(v); });
+      //   var values = _.map(note.split(":"), function(v){ return UTIL.parseNumber(v); });
       //   return _.object(keys, values);
       // });
       entry.audioFile = audioDir + entry.parent + audioExt;
       entry.index = i;
       return entry;
     });
-  };
-
-  AppBrowsePhrases.prototype.play = function(entry){
-    if (entry.index !== this.soundIndex) {
-      if (this.sound) this.sound.unload();
-      var sound = new Howl({
-        src: entry.audioFile,
-        sprite: {
-          "phrase": [entry.start, entry.dur]
-        }
-      });
-      sound.once('load', function(){
-        sound.play("phrase");
-      });
-      this.sound = sound;
-
-    } else if (this.sound && this.sound.state()==="loaded") {
-      this.sound.play("phrase");
-    }
-
-    this.soundIndex = entry.index;
   };
 
   return AppBrowsePhrases;
